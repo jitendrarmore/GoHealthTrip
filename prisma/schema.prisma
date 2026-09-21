@@ -1,0 +1,1352 @@
+// GoHealthTrip — Prisma Database Schema
+// Optimized for PostgreSQL / Vercel Postgres / Supabase / Neon
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// 1. ENUMS
+// ==========================================
+
+enum UserRoleType {
+  PATIENT
+  PATIENT_COMPANION
+  CARE_COORDINATOR
+  MEDICAL_REVIEWER
+  DOCTOR
+  HOSPITAL_IPD_DESK
+  HOSPITAL_ADMIN
+  VISA_COORDINATOR
+  TRAVEL_COORDINATOR
+  HOTEL_PARTNER
+  TRANSPORT_PARTNER
+  FINANCE_ADMIN
+  PLATFORM_ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum IdentityDocumentType {
+  PASSPORT
+  NATIONAL_ID
+  DRIVING_LICENSE
+  RESIDENCE_PERMIT
+}
+
+enum IdentityVerificationStatus {
+  PENDING
+  IN_PROGRESS
+  VERIFIED
+  REJECTED
+  EXPIRED
+  MANUAL_REVIEW
+}
+
+enum CompanionRelationship {
+  SPOUSE
+  PARENT
+  CHILD
+  SIBLING
+  RELATIVE
+  FRIEND
+  NURSE_ATTENDANT
+  LEGAL_GUARDIAN
+}
+
+enum MedicalCaseStage {
+  LEAD
+  REGISTERED
+  IDENTITY_PENDING
+  IDENTITY_VERIFIED
+  MEDICAL_DOCUMENTS_PENDING
+  MEDICAL_REVIEW
+  ADDITIONAL_INFORMATION_REQUIRED
+  READY_FOR_PROVIDER_MATCHING
+  PROVIDER_REVIEW
+  PROPOSAL_READY
+  PATIENT_DECISION
+  PAYMENT_PENDING
+  ACCEPTED
+  DECLINED
+  VISA_PROCESSING
+  VISA_APPROVED
+  TRAVEL_PLANNING
+  READY_FOR_TRAVEL
+  ARRIVED_IN_INDIA
+  HOSPITAL_ADMISSION
+  TREATMENT_IN_PROGRESS
+  DISCHARGE
+  RECOVERY
+  RETURN_HOME
+  FOLLOW_UP
+  COMPLETED
+  CANCELLED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+  EMERGENCY
+}
+
+enum DocumentCategory {
+  DIAGNOSTIC_REPORT
+  LAB_REPORT
+  IMAGING_SCAN_MRI_CT_XRAY
+  PATHOLOGY_REPORT
+  DISCHARGE_SUMMARY
+  DOCTOR_PRESCRIPTION
+  CLINICAL_NOTE
+  PASSPORT_COPY
+  VISA_DOCUMENT
+  INSURANCE_CARD
+  OTHER
+}
+
+enum VirusScanStatus {
+  PENDING
+  SCANNING
+  CLEAN
+  INFECTED
+  ERROR
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  ARCHIVED
+  REJECTED
+}
+
+enum ClinicalReviewStatus {
+  DRAFT
+  PENDING_PEER_REVIEW
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+}
+
+enum IntegrationType {
+  REST_API
+  FHIR_R4
+  HL7_V2
+  SECURE_PORTAL_MANUAL
+  CSV_SYNC
+}
+
+enum EstimateType {
+  PRELIMINARY_ESTIMATE
+  HOSPITAL_QUOTATION
+  SURGEON_OPINION
+  REVISED_ESTIMATE
+}
+
+enum EstimateStatus {
+  DRAFT
+  SUBMITTED
+  EXPIRED
+  SUPERSEDED
+  APPROVED
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT_TO_PATIENT
+  UNDER_REVIEW
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  REPLACED
+}
+
+enum AppointmentType {
+  INITIAL_TELECONSULTATION
+  PRE_ADMISSION_EVALUATION
+  SURGICAL_CONSULTATION
+  INPATIENT_ROUNDS
+  POST_OP_FOLLOW_UP
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  RESCHEDULED
+  CANCELLED
+  NO_SHOW
+}
+
+enum VisaType {
+  INDIAN_E_MEDICAL_VISA
+  INDIAN_REGULAR_MEDICAL_VISA
+  INDIAN_E_MEDICAL_ATTENDANT_VISA
+  INDIAN_REGULAR_MEDICAL_ATTENDANT_VISA
+}
+
+enum VisaStatus {
+  NOT_APPLIED
+  DOCUMENTS_COLLECTED
+  VIL_GENERATED
+  SUBMITTED_TO_EMBASSY
+  UNDER_PROCESSING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum TravelPlanStatus {
+  DRAFT
+  PLANNED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TransportType {
+  AIRPORT_PICKUP_STANDARD
+  AIRPORT_PICKUP_WHEELCHAIR
+  AIRPORT_PICKUP_AMBULANCE
+  HOSPITAL_DAILY_SHUTTLE
+  AIRPORT_DROP
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AdmissionStatus {
+  PRE_ADMITTED
+  ADMITTED
+  IN_ICU
+  POST_OP_WARD
+  READY_FOR_DISCHARGE
+  DISCHARGED
+}
+
+enum PaymentCategory {
+  PLATFORM_FACILITATION_FEE
+  HOSPITAL_TREATMENT_ADVANCE
+  HOSPITAL_FINAL_SETTLEMENT
+  HOTEL_BOOKING_FEE
+  TRANSPORT_FEE
+  VISA_SERVICE_FEE
+}
+
+enum PaymentStatus {
+  INITIATED
+  PROCESSING
+  CAPTURED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  DISPUTED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  PROCESSED
+  REJECTED
+}
+
+enum PartnerType {
+  REFERRAL_DOCTOR
+  FACILITATOR_AGENCY
+  TRAVEL_AGENT
+  EMBASSY_DESK
+  CORPORATE_INSURER
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY_DPDP
+  CROSS_BORDER_DATA_TRANSFER
+  MEDICAL_INFORMATION_SHARING
+  FINANCIAL_FACILITATION_DISCLAIMER
+  TELEHEALTH_INFORMED_CONSENT
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+  LOGIN
+  LOGOUT
+  STAGE_TRANSITION
+  STATUS_CHANGE
+  CONSENT_SIGNED
+}
+
+// ==========================================
+// 2. USER & AUTHENTICATION MODELS
+// ==========================================
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  phone        String?
+  passwordHash String
+  role         UserRoleType @default(PATIENT)
+  status       UserStatus   @default(ACTIVE)
+  isMfaEnabled Boolean      @default(false)
+  mfaSecret    String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  // Relations
+  patient             Patient?
+  careCoordinator     CareCoordinator?
+  doctorProfile       Doctor?
+  userRoles           UserRole[]
+  sentMessages        Message[]                @relation("UserSentMessages")
+  notifications       Notification[]
+  consents            Consent[]
+  auditLogs           AuditLog[]               @relation("UserAuditLogs")
+  supportTickets      SupportTicket[]          @relation("UserSupportTickets")
+  uploadedDocVersions MedicalDocumentVersion[]
+
+  @@index([email])
+  @@index([role, status])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  userRoles   UserRole[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g. "cases:read", "proposals:create"
+  module      String // e.g. "CASES", "PROPOSALS", "DOCUMENTS"
+  description String?
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  id         String   @id @default(uuid())
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+// ==========================================
+// 3. GEOGRAPHY & LOCALIZATION
+// ==========================================
+
+model Country {
+  id           String   @id @default(uuid())
+  code         String   @unique // ISO 3166-1 alpha-3 (e.g., "IND", "OMN", "KEN")
+  name         String
+  phonePrefix  String
+  currencyCode String // e.g., "INR", "USD", "OMR"
+  flagIconUrl  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  configuration       CountryConfiguration?
+  patientsNationality Patient[]             @relation("PatientNationality")
+  patientsResidence   Patient[]             @relation("PatientResidence")
+  hospitals           Hospital[]
+  companions          PatientCompanion[]
+}
+
+model Language {
+  id         String  @id @default(uuid())
+  code       String  @unique // e.g., "en", "ar", "fr", "sw", "ru", "bn"
+  name       String
+  nativeName String
+  isRtl      Boolean @default(false)
+  isActive   Boolean @default(true)
+
+  patients Patient[]
+}
+
+model CountryConfiguration {
+  id                          String   @id @default(uuid())
+  countryId                   String   @unique
+  allowedIdentityProviders    String[] // e.g., ["VERIFF", "PERSONA", "MANUAL"]
+  passportMinValidityMonths   Int      @default(6)
+  visaTypeRequired            VisaType @default(INDIAN_E_MEDICAL_VISA)
+  maxAttendantsAllowed        Int      @default(2)
+  requiresDocumentTranslation Boolean  @default(false)
+  allowedPaymentMethods       String[] // e.g., ["CARD", "WIRE_TRANSFER", "FLYWIRE"]
+  requiredDocChecklist        Json // Array of required document category names
+  embassyAdvisoryNotes        String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// 4. PATIENT & IDENTITY MANAGEMENT
+// ==========================================
+
+model Patient {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  firstName             String
+  lastName              String
+  dateOfBirth           DateTime
+  gender                Gender
+  nationalityCountryId  String
+  residenceCountryId    String
+  primaryLanguageId     String
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  emergencyContactRel   String?
+  medicalAllergies      String?
+  chronicConditions     String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  // Relations
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nationalityCountry Country            @relation("PatientNationality", fields: [nationalityCountryId], references: [id])
+  residenceCountry   Country            @relation("PatientResidence", fields: [residenceCountryId], references: [id])
+  primaryLanguage    Language           @relation(fields: [primaryLanguageId], references: [id])
+  identities         PatientIdentity[]
+  companions         PatientCompanion[]
+  medicalCases       MedicalCase[]
+  documents          MedicalDocument[]
+
+  @@index([userId])
+  @@index([nationalityCountryId])
+}
+
+model PatientIdentity {
+  id                      String                     @id @default(uuid())
+  patientId               String
+  documentType            IdentityDocumentType       @default(PASSPORT)
+  documentNumberHash      String // SHA-256 for fast indexed matching
+  documentNumberEncrypted String // AES-256 encrypted for secure retrieval
+  issuingCountryCode      String
+  expiryDate              DateTime
+  verificationProvider    String // e.g. "VERIFF", "PERSONA", "MANUAL"
+  verificationReferenceId String?
+  status                  IdentityVerificationStatus @default(PENDING)
+  verificationScore       Float?
+  failureReason           String?
+  verifiedAt              DateTime?
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, status])
+  @@index([documentNumberHash])
+}
+
+model PatientCompanion {
+  id                      String                @id @default(uuid())
+  patientId               String
+  firstName               String
+  lastName                String
+  relationship            CompanionRelationship
+  passportNumberEncrypted String?
+  nationalityCountryId    String
+  requiresAttendantVisa   Boolean               @default(true)
+  isTravelling            Boolean               @default(true)
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  patient            Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nationalityCountry Country @relation(fields: [nationalityCountryId], references: [id])
+
+  @@index([patientId])
+}
+
+// ==========================================
+// 5. MEDICAL CASE & DOCUMENTS
+// ==========================================
+
+model MedicalCase {
+  id                        String           @id @default(uuid())
+  caseNumber                String           @unique // e.g. "GHT-2026-0892"
+  patientId                 String
+  assignedCoordinatorId     String?
+  assignedMedicalReviewerId String?
+  currentStage              MedicalCaseStage @default(LEAD)
+  priority                  CasePriority     @default(MEDIUM)
+  primaryCondition          String
+  symptomsDescription       String?
+  requestedTreatment        String?
+  preferredHospitalLocation String? // e.g. "Delhi NCR", "Mumbai", "Bangalore", "Chennai"
+  budgetMinUsd              Decimal?         @db.Decimal(10, 2)
+  budgetMaxUsd              Decimal?         @db.Decimal(10, 2)
+  targetTravelDate          DateTime?
+  cancellationReason        String?
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+  deletedAt                 DateTime?
+
+  // Relations
+  patient              Patient               @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  assignedCoordinator  CareCoordinator?      @relation(fields: [assignedCoordinatorId], references: [id])
+  assignedReviewer     Doctor?               @relation("ReviewerDoctorCases", fields: [assignedMedicalReviewerId], references: [id])
+  medicalConditions    MedicalCondition[]
+  medicalDocuments     MedicalDocument[]
+  clinicalReviews      ClinicalReview[]
+  treatmentEstimates   TreatmentEstimate[]
+  treatmentProposals   TreatmentProposal[]
+  appointments         Appointment[]
+  visaCase             VisaCase?
+  travelPlan           TravelPlan?
+  hospitalAdmission    HospitalAdmission?
+  payments             Payment[]
+  supportTickets       SupportTicket[]
+  messages             Message[]
+  referralTransactions ReferralTransaction[]
+  consents             Consent[]
+  FollowUp             FollowUp[]
+
+  @@index([patientId])
+  @@index([currentStage])
+  @@index([assignedCoordinatorId])
+  @@index([caseNumber])
+}
+
+model MedicalCondition {
+  id            String    @id @default(uuid())
+  caseId        String
+  name          String
+  icd10Code     String?
+  diagnosedDate DateTime?
+  isPrimary     Boolean   @default(false)
+  notes         String?
+  createdAt     DateTime  @default(now())
+
+  medicalCase MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+}
+
+model MedicalDocument {
+  id               String           @id @default(uuid())
+  caseId           String
+  patientId        String
+  category         DocumentCategory @default(DIAGNOSTIC_REPORT)
+  originalFilename String
+  mimeType         String
+  fileSizeBytes    BigInt
+  storageKey       String // S3 / Blob storage encrypted key
+  virusScanStatus  VirusScanStatus  @default(PENDING)
+  virusScanDetails String?
+  documentStatus   DocumentStatus   @default(READY)
+  documentDate     DateTime?
+  aiExtractionDone Boolean          @default(false)
+  aiExtractionJson Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  medicalCase MedicalCase              @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  patient     Patient                  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  versions    MedicalDocumentVersion[]
+
+  @@index([caseId, category])
+  @@index([patientId])
+}
+
+model MedicalDocumentVersion {
+  id               String   @id @default(uuid())
+  documentId       String
+  versionNumber    Int      @default(1)
+  storageKey       String
+  uploadedByUserId String
+  changeSummary    String?
+  createdAt        DateTime @default(now())
+
+  document MedicalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  uploader User            @relation(fields: [uploadedByUserId], references: [id])
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId])
+}
+
+// ==========================================
+// 6. CLINICAL REVIEW & PROVIDER CATALOG
+// ==========================================
+
+model ClinicalReview {
+  id                     String               @id @default(uuid())
+  caseId                 String
+  reviewerDoctorId       String
+  clinicalSummary        String
+  extractedDiagnosis     String
+  recommendedSpecialties String[]
+  recommendedProcedures  String[]
+  missingRecords         String[]
+  riskFlags              String[]
+  reviewStatus           ClinicalReviewStatus @default(SUBMITTED)
+  internalNotes          String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  medicalCase    MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reviewerDoctor Doctor      @relation(fields: [reviewerDoctorId], references: [id])
+
+  @@index([caseId])
+  @@index([reviewerDoctorId])
+}
+
+model Hospital {
+  id                     String          @id @default(uuid())
+  name                   String
+  slug                   String          @unique
+  countryId              String
+  city                   String
+  state                  String
+  address                String
+  postalCode             String?
+  accreditations         String[] // ["JCI", "NABH", "NABL", "ISO"]
+  totalBeds              Int?
+  icuBeds                Int?
+  internationalDeskEmail String
+  internationalDeskPhone String
+  integrationType        IntegrationType @default(SECURE_PORTAL_MANUAL)
+  ratingScore            Float           @default(4.8)
+  reviewCount            Int             @default(0)
+  logoUrl                String?
+  bannerImageUrl         String?
+  description            String
+  specialtiesOffered     String[]
+  isActive               Boolean         @default(true)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  country            Country              @relation(fields: [countryId], references: [id])
+  departments        HospitalDepartment[]
+  hospitalDoctors    HospitalDoctor[]
+  treatmentEstimates TreatmentEstimate[]
+  treatmentProposals TreatmentProposal[]
+  appointments       Appointment[]
+  admissions         HospitalAdmission[]
+
+  @@index([city, isActive])
+  @@index([slug])
+}
+
+model HospitalDepartment {
+  id          String   @id @default(uuid())
+  hospitalId  String
+  name        String
+  code        String?
+  description String?
+  headDoctor  String?
+  createdAt   DateTime @default(now())
+
+  hospital        Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  hospitalDoctors HospitalDoctor[]
+  treatments      Treatment[]
+
+  @@unique([hospitalId, name])
+  @@index([hospitalId])
+}
+
+model Doctor {
+  id                   String   @id @default(uuid())
+  userId               String?  @unique
+  firstName            String
+  lastName             String
+  title                String   @default("Dr.")
+  primarySpecialty     String
+  subSpecialties       String[]
+  qualifications       String // e.g. "MBBS, MS, MCh (Cardiothoracic Surgery)"
+  experienceYears      Int
+  languagesSpoken      String[] // ["English", "Arabic", "Hindi"]
+  bio                  String
+  profilePhotoUrl      String?
+  internationalOpdRate Decimal? @db.Decimal(10, 2)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  assignedCases      MedicalCase[]       @relation("ReviewerDoctorCases")
+  clinicalReviews    ClinicalReview[]
+  hospitalDoctors    HospitalDoctor[]
+  treatmentEstimates TreatmentEstimate[]
+  treatmentProposals TreatmentProposal[]
+  appointments       Appointment[]
+  admissions         HospitalAdmission[]
+  treatmentEpisodes  TreatmentEpisode[]
+  followUps          FollowUp[]
+
+  @@index([primarySpecialty, isActive])
+}
+
+model HospitalDoctor {
+  id              String   @id @default(uuid())
+  hospitalId      String
+  doctorId        String
+  departmentId    String
+  designation     String // e.g. "Director & Head of Cardiac Sciences"
+  consultationFee Decimal  @db.Decimal(10, 2)
+  opdScheduleJson Json? // Weekly availability schedule
+  isPrimary       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  hospital   Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  doctor     Doctor             @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  department HospitalDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, doctorId])
+  @@index([hospitalId])
+  @@index([doctorId])
+}
+
+// ==========================================
+// 7. TREATMENTS, ESTIMATES & PROPOSALS
+// ==========================================
+
+model Treatment {
+  id                    String   @id @default(uuid())
+  departmentId          String?
+  code                  String   @unique // e.g. "CARD-CABG-001"
+  name                  String
+  category              String // "Cardiology", "Oncology", "Orthopedics"
+  description           String
+  typicalStayDays       Int      @default(7)
+  typicalRecoveryDays   Int      @default(14)
+  indicativePriceMinUsd Decimal  @db.Decimal(10, 2)
+  indicativePriceMaxUsd Decimal  @db.Decimal(10, 2)
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+
+  department HospitalDepartment? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  procedures Procedure[]
+  packages   TreatmentPackage[]
+
+  @@index([category, isActive])
+  @@index([code])
+}
+
+model Procedure {
+  id             String   @id @default(uuid())
+  treatmentId    String
+  cptCode        String?
+  name           String
+  durationHours  Decimal? @db.Decimal(4, 2)
+  anesthesiaType String? // "General", "Spinal", "Local"
+  description    String?
+
+  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@index([treatmentId])
+}
+
+model TreatmentPackage {
+  id               String   @id @default(uuid())
+  treatmentId      String
+  packageName      String
+  packagePriceUsd  Decimal  @db.Decimal(10, 2)
+  inclusions       String[]
+  exclusions       String[]
+  hospitalStayDays Int
+  icuStayDays      Int
+  hotelStayDays    Int
+  airportTransfers Boolean  @default(true)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  treatment Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@index([treatmentId])
+}
+
+model TreatmentEstimate {
+  id                 String         @id @default(uuid())
+  caseId             String
+  hospitalId         String
+  doctorId           String?
+  estimateType       EstimateType   @default(PRELIMINARY_ESTIMATE)
+  procedureCostUsd   Decimal        @db.Decimal(10, 2)
+  doctorFeeUsd       Decimal        @db.Decimal(10, 2)
+  roomAndNursingUsd  Decimal        @db.Decimal(10, 2)
+  diagnosticsCostUsd Decimal        @db.Decimal(10, 2)
+  additionalEstUsd   Decimal        @default(0) @db.Decimal(10, 2)
+  totalEstimateUsd   Decimal        @db.Decimal(10, 2)
+  currency           String         @default("USD")
+  inclusions         String[]
+  exclusions         String[]
+  assumptions        String[]
+  validUntil         DateTime
+  version            Int            @default(1)
+  status             EstimateStatus @default(SUBMITTED)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  medicalCase MedicalCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  hospital    Hospital            @relation(fields: [hospitalId], references: [id])
+  doctor      Doctor?             @relation(fields: [doctorId], references: [id])
+  proposals   TreatmentProposal[]
+
+  @@index([caseId])
+  @@index([hospitalId])
+}
+
+model TreatmentProposal {
+  id                     String         @id @default(uuid())
+  caseId                 String
+  version                Int            @default(1)
+  hospitalId             String
+  doctorId               String
+  treatmentEstimateId    String
+  treatmentCostUsd       Decimal        @db.Decimal(10, 2)
+  logisticsCostUsd       Decimal        @default(0) @db.Decimal(10, 2)
+  platformFeeUsd         Decimal        @default(0) @db.Decimal(10, 2)
+  totalAmountUsd         Decimal        @db.Decimal(10, 2)
+  estimatedAdmissionDate DateTime?
+  estimatedHospitalDays  Int            @default(7)
+  estimatedRecoveryDays  Int            @default(10)
+  termsAndConditions     String
+  validUntil             DateTime
+  status                 ProposalStatus @default(SENT_TO_PATIENT)
+  acceptedAt             DateTime?
+  declinedAt             DateTime?
+  declinedReason         String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  medicalCase       MedicalCase       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  hospital          Hospital          @relation(fields: [hospitalId], references: [id])
+  doctor            Doctor            @relation(fields: [doctorId], references: [id])
+  treatmentEstimate TreatmentEstimate @relation(fields: [treatmentEstimateId], references: [id])
+
+  @@unique([caseId, version])
+  @@index([caseId, status])
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  caseId          String
+  hospitalId      String
+  doctorId        String
+  appointmentType AppointmentType   @default(INITIAL_TELECONSULTATION)
+  scheduledTime   DateTime
+  durationMinutes Int               @default(30)
+  meetingLink     String?
+  roomNumber      String?
+  status          AppointmentStatus @default(SCHEDULED)
+  clinicalNotes   String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  medicalCase MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  hospital    Hospital    @relation(fields: [hospitalId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+
+  @@index([caseId])
+  @@index([doctorId, scheduledTime])
+}
+
+// ==========================================
+// 8. VISA, TRAVEL & LOGISTICS
+// ==========================================
+
+model VisaCase {
+  id                         String     @id @default(uuid())
+  caseId                     String     @unique
+  visaType                   VisaType   @default(INDIAN_E_MEDICAL_VISA)
+  embassyApplicationNumber   String?
+  invitationLetterStorageKey String? // Hospital VIL Letter on letterhead
+  status                     VisaStatus @default(NOT_APPLIED)
+  submissionDate             DateTime?
+  issuedDate                 DateTime?
+  expiryDate                 DateTime?
+  frroRegistrationRequired   Boolean    @default(false)
+  visaRejectionReason        String?
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+
+  medicalCase   MedicalCase    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  visaDocuments VisaDocument[]
+
+  @@index([caseId, status])
+}
+
+model VisaDocument {
+  id             String   @id @default(uuid())
+  visaCaseId     String
+  documentName   String
+  storageKey     String
+  isAttendantDoc Boolean  @default(false)
+  companionId    String?
+  uploadedAt     DateTime @default(now())
+
+  visaCase VisaCase @relation(fields: [visaCaseId], references: [id], onDelete: Cascade)
+
+  @@index([visaCaseId])
+}
+
+model TravelPlan {
+  id                   String           @id @default(uuid())
+  caseId               String           @unique
+  status               TravelPlanStatus @default(DRAFT)
+  arrivalDate          DateTime?
+  departureDate        DateTime?
+  masterItineraryJson  Json?
+  specialAssistanceReq String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  medicalCase       MedicalCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  flights           Flight[]
+  hotelBookings     HotelBooking[]
+  transportBookings TransportBooking[]
+
+  @@index([caseId])
+}
+
+model Flight {
+  id               String   @id @default(uuid())
+  travelPlanId     String
+  airline          String
+  flightNumber     String
+  departureAirport String // e.g. "MCT", "NBO", "DXB"
+  arrivalAirport   String // e.g. "DEL", "BOM", "BLR", "MAA"
+  departureTime    DateTime
+  arrivalTime      DateTime
+  pnrNumber        String
+  isReturnFlight   Boolean  @default(false)
+
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+
+  @@index([travelPlanId])
+}
+
+model Hotel {
+  id                     String   @id @default(uuid())
+  name                   String
+  city                   String
+  address                String
+  distanceToHospitalKm   Decimal  @db.Decimal(5, 2)
+  starRating             Int      @default(4)
+  isWheelchairAccessible Boolean  @default(true)
+  hasKitchenette         Boolean  @default(true)
+  contactPhone           String
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+
+  bookings HotelBooking[]
+
+  @@index([city, isActive])
+}
+
+model HotelBooking {
+  id               String        @id @default(uuid())
+  travelPlanId     String
+  hotelId          String
+  checkInDate      DateTime
+  checkOutDate     DateTime
+  roomType         String // "Deluxe Suite", "Accessible Twin"
+  numberOfGuests   Int           @default(2)
+  bookingReference String
+  totalCostUsd     Decimal       @db.Decimal(10, 2)
+  status           BookingStatus @default(CONFIRMED)
+  createdAt        DateTime      @default(now())
+
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  hotel      Hotel      @relation(fields: [hotelId], references: [id])
+
+  @@index([travelPlanId])
+  @@index([hotelId])
+}
+
+model TransportProvider {
+  id           String   @id @default(uuid())
+  companyName  String
+  city         String
+  contactPhone String
+  fleetTypes   String[] // ["Sedan", "SUV", "Wheelchair Ambulance", "AC Van"]
+  isActive     Boolean  @default(true)
+
+  bookings TransportBooking[]
+}
+
+model TransportBooking {
+  id                  String        @id @default(uuid())
+  travelPlanId        String
+  transportProviderId String?
+  transportType       TransportType @default(AIRPORT_PICKUP_STANDARD)
+  pickupLocation      String
+  dropoffLocation     String
+  scheduledTime       DateTime
+  driverName          String?
+  driverPhone         String?
+  vehicleNumber       String?
+  status              BookingStatus @default(CONFIRMED)
+  createdAt           DateTime      @default(now())
+
+  travelPlan        TravelPlan         @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  transportProvider TransportProvider? @relation(fields: [transportProviderId], references: [id])
+
+  @@index([travelPlanId])
+}
+
+// ==========================================
+// 9. HOSPITAL ADMISSION, SURGERY & DISCHARGE
+// ==========================================
+
+model HospitalAdmission {
+  id                String          @id @default(uuid())
+  caseId            String          @unique
+  hospitalId        String
+  attendingDoctorId String
+  admissionNumber   String // Hospital MRN / IPD number
+  admissionDate     DateTime
+  roomCategory      String // "Single Deluxe", "Executive Suite"
+  roomNumber        String?
+  status            AdmissionStatus @default(ADMITTED)
+  admissionNotes    String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  medicalCase     MedicalCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  hospital        Hospital           @relation(fields: [hospitalId], references: [id])
+  attendingDoctor Doctor             @relation(fields: [attendingDoctorId], references: [id])
+  episodes        TreatmentEpisode[]
+  discharge       Discharge?
+
+  @@index([caseId])
+  @@index([hospitalId])
+}
+
+model TreatmentEpisode {
+  id                    String   @id @default(uuid())
+  admissionId           String
+  surgeonId             String
+  procedureName         String
+  procedureDate         DateTime
+  operativeNotesSummary String
+  implantDetails        String?
+  hasComplications      Boolean  @default(false)
+  complicationDetails   String?
+  createdAt             DateTime @default(now())
+
+  admission HospitalAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  surgeon   Doctor            @relation(fields: [surgeonId], references: [id])
+
+  @@index([admissionId])
+}
+
+model Discharge {
+  id                         String   @id @default(uuid())
+  admissionId                String   @unique
+  dischargeDate              DateTime
+  dischargeSummaryStorageKey String
+  prescribedMedications      Json // Array of medicines, dosage, schedule
+  postCareInstructions       String
+  fitToFlyCertificateKey     String?
+  createdAt                  DateTime @default(now())
+
+  admission HospitalAdmission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  followUps FollowUp[]
+
+  @@index([admissionId])
+}
+
+model FollowUp {
+  id               String            @id @default(uuid())
+  caseId           String
+  dischargeId      String?
+  doctorId         String
+  scheduledDate    DateTime
+  consultationMode String            @default("VIDEO_TELECONSULTATION")
+  status           AppointmentStatus @default(SCHEDULED)
+  clinicalFeedback String?
+  nextActionDate   DateTime?
+  createdAt        DateTime          @default(now())
+
+  medicalCase MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  discharge   Discharge?  @relation(fields: [dischargeId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+
+  @@index([caseId])
+  @@index([doctorId])
+}
+
+// ==========================================
+// 10. PAYMENTS, BILLING & REFUNDS
+// ==========================================
+
+model Payment {
+  id                   String          @id @default(uuid())
+  caseId               String
+  paymentCategory      PaymentCategory @default(PLATFORM_FACILITATION_FEE)
+  amountUsd            Decimal         @db.Decimal(10, 2)
+  currency             String          @default("USD")
+  amountInCurrency     Decimal         @db.Decimal(10, 2)
+  paymentProvider      String // "RAZORPAY", "STRIPE", "FLYWIRE", "OFFLINE_WIRE"
+  transactionReference String          @unique
+  idempotencyKey       String          @unique
+  status               PaymentStatus   @default(INITIATED)
+  gatewayPayloadJson   Json?
+  paidAt               DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  medicalCase MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  invoices    Invoice[]
+  refunds     Refund[]
+
+  @@index([caseId, status])
+  @@index([transactionReference])
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  paymentId     String
+  invoiceNumber String   @unique // e.g. "INV-2026-0041"
+  pdfStorageKey String?
+  subtotalUsd   Decimal  @db.Decimal(10, 2)
+  taxUsd        Decimal  @default(0) @db.Decimal(10, 2)
+  totalUsd      Decimal  @db.Decimal(10, 2)
+  issuedDate    DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+}
+
+model Refund {
+  id          String       @id @default(uuid())
+  paymentId   String
+  amountUsd   Decimal      @db.Decimal(10, 2)
+  reason      String
+  status      RefundStatus @default(REQUESTED)
+  processedAt DateTime?
+  refundRefId String?
+  createdAt   DateTime     @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+}
+
+// ==========================================
+// 11. PARTNERS & REFERRAL SETTLEMENTS
+// ==========================================
+
+model Partner {
+  id                   String      @id @default(uuid())
+  partnerType          PartnerType @default(REFERRAL_DOCTOR)
+  organizationName     String
+  contactPerson        String
+  email                String      @unique
+  phone                String
+  countryCode          String
+  bankDetailsEncrypted String?
+  isActive             Boolean     @default(true)
+  createdAt            DateTime    @default(now())
+
+  agreements ReferralAgreement[]
+
+  @@index([partnerType, isActive])
+}
+
+model ReferralAgreement {
+  id                   String    @id @default(uuid())
+  partnerId            String
+  commissionPercentage Decimal   @db.Decimal(5, 2) // e.g. 5.00%
+  effectiveStartDate   DateTime
+  effectiveEndDate     DateTime?
+  isActive             Boolean   @default(true)
+
+  partner      Partner               @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  transactions ReferralTransaction[]
+
+  @@index([partnerId])
+}
+
+model ReferralTransaction {
+  id                   String    @id @default(uuid())
+  agreementId          String
+  caseId               String
+  caseTreatmentCostUsd Decimal   @db.Decimal(10, 2)
+  commissionAmountUsd  Decimal   @db.Decimal(10, 2)
+  isSettled            Boolean   @default(false)
+  settledAt            DateTime?
+  createdAt            DateTime  @default(now())
+
+  agreement   ReferralAgreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  medicalCase MedicalCase       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([agreementId])
+  @@index([caseId])
+}
+
+// ==========================================
+// 12. OPERATIONS, MESSAGING & SUPPORT
+// ==========================================
+
+model CareCoordinator {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  employeeCode       String   @unique
+  firstName          String
+  lastName           String
+  assignedRegion     String // "GCC & Middle East", "East Africa", "CIS"
+  languagesSpoken    String[]
+  activeCaseCapacity Int      @default(25)
+  isActive           Boolean  @default(true)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedCases MedicalCase[]
+
+  @@index([assignedRegion, isActive])
+}
+
+model SupportTicket {
+  id           String       @id @default(uuid())
+  caseId       String?
+  userId       String
+  ticketNumber String       @unique // e.g. "TCK-8921"
+  subject      String
+  category     String // "BILLING", "VISA", "HOSPITAL", "TRAVEL"
+  priority     CasePriority @default(MEDIUM)
+  status       String       @default("OPEN") // "OPEN", "IN_PROGRESS", "RESOLVED"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  medicalCase MedicalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  user        User         @relation("UserSupportTickets", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([caseId])
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  caseId         String
+  senderUserId   String
+  recipientRole  UserRoleType?
+  messageContent String
+  attachmentKey  String?
+  isRead         Boolean       @default(false)
+  sentAt         DateTime      @default(now())
+
+  medicalCase MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  senderUser  User        @relation("UserSentMessages", fields: [senderUserId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, sentAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  linkUrl   String?
+  channel   String   @default("IN_APP") // "IN_APP", "SMS", "WHATSAPP", "EMAIL"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+// ==========================================
+// 13. CONSENTS & IMMUTABLE AUDIT TRAIL
+// ==========================================
+
+model Consent {
+  id              String      @id @default(uuid())
+  userId          String
+  caseId          String?
+  consentType     ConsentType
+  documentVersion String      @default("v1.0")
+  ipAddress       String
+  userAgent       String
+  signedAt        DateTime    @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicalCase MedicalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, consentType])
+  @@index([caseId])
+}
+
+model AuditLog {
+  id            String      @id @default(uuid())
+  entityName    String // e.g. "MedicalCase", "MedicalDocument", "Payment"
+  entityId      String
+  userId        String?
+  action        AuditAction
+  oldValuesJson Json?
+  newValuesJson Json?
+  ipAddress     String?
+  userAgent     String?
+  reason        String?
+  timestamp     DateTime    @default(now())
+
+  user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityName, entityId])
+  @@index([userId])
+  @@index([timestamp])
+}
