@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { CacheService } from '@/lib/cache/redis';
 import { apiSuccess, apiError } from '@/lib/api/response';
 import { AuditAction } from '@prisma/client';
+import { sendOtpEmail } from '@/lib/email/mailer';
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,35 +54,17 @@ export async function POST(req: NextRequest) {
       console.warn('Postgres OTP backup write failed:', dbErr);
     }
 
-    // Optional Live Providers Execution on Vercel:
-    // 1. Resend (Email):
-    if (isEmail && process.env.RESEND_API_KEY) {
+    // 1. Email Delivery (Gmail SMTP gohealthtripcom@gmail.com / Resend):
+    if (isEmail) {
       try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: process.env.EMAIL_FROM || 'GoHealthTrip Auth <auth@gohealthtrip.com>',
-            to: cleanRecipient,
-            subject: `Your GoHealthTrip Verification Code: ${otp}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded: 12px;">
-                <h2 style="color: #0d9488;">GoHealthTrip India · Patient Verification</h2>
-                <p>Hello ${fullName || 'Patient'},</p>
-                <p>Use the following 6-digit verification code to complete your sign-up and access your medical travel dossier:</p>
-                <div style="background: #f0fdfa; border: 2px solid #0d9488; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #0f766e;">${otp}</span>
-                </div>
-                <p style="font-size: 12px; color: #64748b;">This code is valid for 5 minutes. If you did not request this, please disregard this email.</p>
-              </div>
-            `,
-          }),
+        const mailResult = await sendOtpEmail({
+          to: cleanRecipient,
+          otp,
+          fullName: fullName || 'Patient',
         });
-      } catch (err) {
-        console.warn('Resend live dispatch skipped or failed:', err);
+        console.log('Email dispatch result:', mailResult);
+      } catch (mailErr) {
+        console.warn('Email dispatch error:', mailErr);
       }
     }
 
