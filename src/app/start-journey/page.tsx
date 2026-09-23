@@ -182,25 +182,43 @@ export default function StartJourneyPage() {
 
   const handleGoogleFastFill = async () => {
     try {
+      const { signInWithPopup } = await import('firebase/auth');
+      const { auth, googleProvider } = await import('@/lib/firebase');
+
+      const result = await signInWithPopup(auth, googleProvider);
+      const googleUser = result.user;
+      const idToken = await googleUser.getIdToken();
+
+      const fullName = googleUser.displayName || '';
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || 'Patient';
+      const lastName = nameParts.slice(1).join(' ') || 'User';
+
       const res = await fetch('/api/v1/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'patient.google@gmail.com',
-          name: 'Ahmed Al-Kindi',
-          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
+          email: googleUser.email,
+          name: fullName || 'Patient User',
+          picture: googleUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
+          googleId: googleUser.uid,
+          idToken,
         }),
       });
+
       const data = await res.json();
       if (data.success) {
-        setFormData((prev) => ({
-          ...prev,
-          firstName: 'Ahmed',
-          lastName: 'Al-Kindi',
-          email: 'patient.google@gmail.com',
-        }));
+        localStorage.setItem('ght_token', data.data.token);
+        localStorage.setItem('ght_user', JSON.stringify(data.data.user));
       }
-    } catch (e) {
+
+      setFormData((prev) => ({
+        ...prev,
+        firstName,
+        lastName,
+        email: googleUser.email || prev.email,
+      }));
+    } catch (e: any) {
       console.warn('Google fast fill error:', e);
     }
   };

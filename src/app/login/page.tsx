@@ -57,12 +57,6 @@ export default function LoginPage() {
     setError('');
 
     try {
-      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        throw new Error(
-          'Firebase API is not yet configured. Please add NEXT_PUBLIC_FIREBASE_API_KEY and credentials to enable live Google Sign-in.'
-        );
-      }
-
       const { signInWithPopup } = await import('firebase/auth');
       const { auth, googleProvider } = await import('@/lib/firebase');
 
