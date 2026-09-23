@@ -14,3 +14,142 @@ body {
   color: #0f172a;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14,165,233,0.4); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 10px rgba(14,165,233,0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14,165,233,0); }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fadeInUp    { animation: fadeInUp 0.6s ease-out forwards; }
+.animate-fadeIn      { animation: fadeIn 0.8s ease-out forwards; }
+.animate-float       { animation: floatY 4s ease-in-out infinite; }
+.animate-pulse-ring  { animation: pulse-ring 2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
+.animate-countUp     { animation: countUp 0.5s ease-out forwards; }
+
+.delay-100  { animation-delay: 0.1s; }
+.delay-200  { animation-delay: 0.2s; }
+.delay-300  { animation-delay: 0.3s; }
+.delay-400  { animation-delay: 0.4s; }
+.delay-500  { animation-delay: 0.5s; }
+.delay-600  { animation-delay: 0.6s; }
+
+/* Animated gradient text */
+.gradient-text-animated {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1, #0ea5e9);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s linear infinite;
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.12);
+}
+
+/* Hero mesh gradient */
+.hero-mesh {
+  background-color: #0c1a35;
+  background-image:
+    radial-gradient(at 20% 30%, rgba(14,165,233,0.25) 0px, transparent 60%),
+    radial-gradient(at 80% 20%, rgba(99,102,241,0.2)  0px, transparent 55%),
+    radial-gradient(at 50% 80%, rgba(16,185,129,0.12) 0px, transparent 60%),
+    radial-gradient(at 10% 80%, rgba(245,158,11,0.08) 0px, transparent 50%);
+}
+
+/* Animated underline */
+.nav-link-underline {
+  position: relative;
+}
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #0ea5e9;
+  transition: width 0.25s ease;
+  border-radius: 2px;
+}
+.nav-link-underline:hover::after,
+.nav-link-underline.active::after { width: 100%; }
+
+/* Specialty card gradient borders */
+.spec-card-cardiology  { border-top: 3px solid #ef4444; }
+.spec-card-oncology    { border-top: 3px solid #8b5cf6; }
+.spec-card-ortho       { border-top: 3px solid #0ea5e9; }
+.spec-card-neuro       { border-top: 3px solid #f59e0b; }
+.spec-card-transplant  { border-top: 3px solid #10b981; }
+.spec-card-ivf         { border-top: 3px solid #ec4899; }
+
+/* Step connector line */
+.step-line {
+  position: relative;
+}
+.step-line::after {
+  content: '';
+  position: absolute;
+  top: 32px;
+  right: -32px;
+  width: 32px;
+  height: 2px;
+  background: linear-gradient(to right, #0ea5e9, #6366f1);
+}
+
+/* Testimonial star */
+.star-filled { color: #f59e0b; }
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
