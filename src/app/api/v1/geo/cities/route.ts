@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Standard major cities mapped by country for instantaneous, zero-failure lookup
+const API_TOKEN = process.env.RESTCOUNTRIES_API_TOKEN || 'rc_live_6504a9a2c12f4847be1c28dda2b91077';
+const API_BASE_URL = 'https://api.restcountries.com/countries/v5';
+
+// Known major cities mapped by country for instantaneous, zero-delay autocomplete
 const MAJOR_CITIES_MAP: Record<string, string[]> = {
+  Canada: ['Ottawa', 'Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Edmonton', 'Quebec City', 'Winnipeg'],
   Oman: ['Muscat', 'Salalah', 'Sohar', 'Nizwa', 'Sur', 'Seeb', 'Barka', 'Rustaq', 'Ibri', 'Khasab'],
   'United Arab Emirates': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Al Ain', 'Ras Al Khaimah', 'Fujairah'],
   'Saudi Arabia': ['Riyadh', 'Jeddah', 'Mecca', 'Medina', 'Dammam', 'Khobar', 'Tabuk', 'Abha'],
@@ -13,26 +17,25 @@ const MAJOR_CITIES_MAP: Record<string, string[]> = {
   'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami', 'San Francisco', 'Dallas', 'Atlanta', 'Seattle', 'Boston'],
   Kuwait: ['Kuwait City', 'Hawally', 'Salmiya', 'Al Ahmadi', 'Farwaniya', 'Jahra'],
   Qatar: ['Doha', 'Al Rayyan', 'Al Wakrah', 'Al Khor', 'Umm Salal'],
-  Bahrain: ['Manama', 'Riffa', 'Muharraq', 'Hamad Town', 'A\'ali'],
-  Tanzania: ['Dar es Salaam', 'Zanzibar City', 'Mwanza', 'Arusha', 'Dodoma', 'Mbeya'],
-  Uganda: ['Kampala', 'Entebbe', 'Jinja', 'Gulu', 'Mbarara'],
-  Ethiopia: ['Addis Ababa', 'Dire Dawa', 'Hawassa', 'Bahir Dar', 'Gondar'],
-  Ghana: ['Accra', 'Kumasi', 'Tamale', 'Sekondi-Takoradi', 'Cape Coast'],
-  Kazakhstan: ['Almaty', 'Astana', 'Shymkent', 'Karaganda', 'Aktobe'],
-  Kyrgyzstan: ['Bishkek', 'Osh', 'Jalal-Abad', 'Karakol'],
-  Tajikistan: ['Dushanbe', 'Khujand', 'Kulob', 'Bokhtar'],
-  Russia: ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan', 'Nizhny Novgorod'],
-  Canada: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'],
+  Bahrain: ['Manama', 'Riffa', 'Muharraq', 'Hamad Town'],
+  Tanzania: ['Dar es Salaam', 'Zanzibar City', 'Mwanza', 'Arusha', 'Dodoma'],
+  Uganda: ['Kampala', 'Entebbe', 'Jinja', 'Gulu'],
+  Ethiopia: ['Addis Ababa', 'Dire Dawa', 'Hawassa', 'Bahir Dar'],
+  Ghana: ['Accra', 'Kumasi', 'Tamale', 'Sekondi-Takoradi'],
+  Kazakhstan: ['Almaty', 'Astana', 'Shymkent', 'Karaganda'],
+  Kyrgyzstan: ['Bishkek', 'Osh', 'Jalal-Abad'],
+  Tajikistan: ['Dushanbe', 'Khujand', 'Kulob'],
+  Russia: ['Moscow', 'Saint Petersburg', 'Novosibirsk', 'Yekaterinburg', 'Kazan'],
   Australia: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
-  Egypt: ['Cairo', 'Alexandria', 'Giza', 'Sharm El Sheikh', 'Hurghada', 'Luxor'],
-  France: ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Bordeaux'],
-  Germany: ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne', 'Düsseldorf', 'Stuttgart'],
-  Iraq: ['Baghdad', 'Basra', 'Erbil', 'Najaf', 'Sulaymaniyah', 'Mosul'],
-  Nepal: ['Kathmandu', 'Pokhara', 'Lalitpur', 'Biratnagar', 'Bharatpur'],
-  'South Africa': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth'],
-  'Sri Lanka': ['Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo'],
-  Turkey: ['Istanbul', 'Ankara', 'Izmir', 'Antalya', 'Bursa'],
-  Yemen: ['Sana\'a', 'Aden', 'Taiz', 'Al Hudaydah', 'Mukalla'],
+  Egypt: ['Cairo', 'Alexandria', 'Giza', 'Sharm El Sheikh'],
+  France: ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice'],
+  Germany: ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Cologne'],
+  India: ['New Delhi', 'Mumbai', 'Bengaluru', 'Chennai', 'Hyderabad', 'Kolkata', 'Gurugram'],
+  Nepal: ['Kathmandu', 'Pokhara', 'Lalitpur'],
+  'South Africa': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria'],
+  'Sri Lanka': ['Colombo', 'Kandy', 'Galle', 'Jaffna'],
+  Turkey: ['Istanbul', 'Ankara', 'Izmir', 'Antalya'],
+  Yemen: ['Sana\'a', 'Aden', 'Taiz'],
 };
 
 export async function GET(req: NextRequest) {
@@ -41,28 +44,37 @@ export async function GET(req: NextRequest) {
     const country = searchParams.get('country') || '';
     const query = searchParams.get('q')?.toLowerCase() || '';
 
-    // If country is in our high-speed lookup, return immediately
     let cities: string[] = MAJOR_CITIES_MAP[country] || [];
 
-    // Fallback: If not found, attempt fetching from CountriesNow free API
-    if (cities.length === 0 && country) {
+    // Also query api.restcountries.com/countries/v5 to fetch official capital city
+    if (country) {
       try {
-        const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ country }),
-          next: { revalidate: 86400 }, // Cache 24 hours
+        const apiUrl = `${API_BASE_URL}?q=${encodeURIComponent(country)}&pretty=1`;
+        const res = await fetch(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${API_TOKEN}`,
+            'User-Agent': 'curl/8.7.1',
+          },
+          next: { revalidate: 86400 },
         });
-        if (response.ok) {
-          const json = await response.json();
-          if (json.data && Array.isArray(json.data)) {
-            cities = json.data.slice(0, 50); // limit to top 50
+
+        if (res.ok) {
+          const json = await res.json();
+          const obj = json?.data?.objects?.[0];
+          if (obj?.capitals && Array.isArray(obj.capitals)) {
+            const capitalName = obj.capitals[0]?.name;
+            if (capitalName && !cities.includes(capitalName)) {
+              cities = [capitalName, ...cities];
+            }
           }
         }
       } catch (err) {
-        // Fallback default city is capital or capital representation
-        cities = ['Capital / Main City', 'Other City'];
+        console.warn('API fetch capital error:', err);
       }
+    }
+
+    if (cities.length === 0) {
+      cities = ['Capital / Main City', 'Central City', 'Other City'];
     }
 
     if (query) {

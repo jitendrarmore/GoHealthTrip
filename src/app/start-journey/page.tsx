@@ -16,22 +16,25 @@ interface CountryItem {
   code: string;
   flag: string;
   dialCode: string;
+  capital?: string;
   popular?: boolean;
 }
 
 const DEFAULT_POPULAR_COUNTRIES: CountryItem[] = [
-  { name: 'Oman', flag: '🇴🇲', code: 'OMN', dialCode: '+968', popular: true },
-  { name: 'United Arab Emirates', flag: '🇦🇪', code: 'ARE', dialCode: '+971', popular: true },
-  { name: 'Saudi Arabia', flag: '🇸🇦', code: 'SAU', dialCode: '+966', popular: true },
-  { name: 'Kenya', flag: '🇰🇪', code: 'KEN', dialCode: '+254', popular: true },
-  { name: 'Nigeria', flag: '🇳🇬', code: 'NGA', dialCode: '+234', popular: true },
-  { name: 'Bangladesh', flag: '🇧🇩', code: 'BGD', dialCode: '+880', popular: true },
-  { name: 'Uzbekistan', flag: '🇺🇿', code: 'UZB', dialCode: '+998', popular: true },
-  { name: 'United Kingdom', flag: '🇬🇧', code: 'GBR', dialCode: '+44', popular: true },
-  { name: 'United States', flag: '🇺🇸', code: 'USA', dialCode: '+1', popular: true },
-  { name: 'Tanzania', flag: '🇹🇿', code: 'TZA', dialCode: '+255', popular: true },
-  { name: 'Kuwait', flag: '🇰🇼', code: 'KWT', dialCode: '+965', popular: true },
-  { name: 'Qatar', flag: '🇶🇦', code: 'QAT', dialCode: '+974', popular: true },
+  { name: 'Oman', flag: '🇴🇲', code: 'OMN', dialCode: '+968', capital: 'Muscat', popular: true },
+  { name: 'United Arab Emirates', flag: '🇦🇪', code: 'ARE', dialCode: '+971', capital: 'Abu Dhabi', popular: true },
+  { name: 'Saudi Arabia', flag: '🇸🇦', code: 'SAU', dialCode: '+966', capital: 'Riyadh', popular: true },
+  { name: 'Kenya', flag: '🇰🇪', code: 'KEN', dialCode: '+254', capital: 'Nairobi', popular: true },
+  { name: 'Nigeria', flag: '🇳🇬', code: 'NGA', dialCode: '+234', capital: 'Abuja', popular: true },
+  { name: 'Bangladesh', flag: '🇧🇩', code: 'BGD', dialCode: '+880', capital: 'Dhaka', popular: true },
+  { name: 'Uzbekistan', flag: '🇺🇿', code: 'UZB', dialCode: '+998', capital: 'Tashkent', popular: true },
+  { name: 'Canada', flag: '🇨🇦', code: 'CAN', dialCode: '+1', capital: 'Ottawa', popular: true },
+  { name: 'United Kingdom', flag: '🇬🇧', code: 'GBR', dialCode: '+44', capital: 'London', popular: true },
+  { name: 'United States', flag: '🇺🇸', code: 'USA', dialCode: '+1', capital: 'Washington, D.C.', popular: true },
+  { name: 'India', flag: '🇮🇳', code: 'IND', dialCode: '+91', capital: 'New Delhi', popular: true },
+  { name: 'Tanzania', flag: '🇹🇿', code: 'TZA', dialCode: '+255', capital: 'Dodoma', popular: true },
+  { name: 'Kuwait', flag: '🇰🇼', code: 'KWT', dialCode: '+965', capital: 'Kuwait City', popular: true },
+  { name: 'Qatar', flag: '🇶🇦', code: 'QAT', dialCode: '+974', capital: 'Doha', popular: true },
 ];
 
 const stepMeta = [
@@ -61,6 +64,7 @@ export default function StartJourneyPage() {
   // Geo state
   const [allCountries, setAllCountries] = useState<CountryItem[]>(DEFAULT_POPULAR_COUNTRIES);
   const [countrySearch, setCountrySearch] = useState('');
+  const [isSearchingApi, setIsSearchingApi] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
   const [isCustomCity, setIsCustomCity] = useState(false);
@@ -102,6 +106,37 @@ export default function StartJourneyPage() {
       .catch((err) => console.warn('Using bundled countries fallback:', err));
   }, []);
 
+  // Debounced live search querying restcountries v5 API via backend endpoint
+  useEffect(() => {
+    if (!countrySearch.trim()) return;
+
+    const timer = setTimeout(() => {
+      setIsSearchingApi(true);
+      fetch(`/api/v1/geo/countries?q=${encodeURIComponent(countrySearch.trim())}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setAllCountries((prev) => {
+              const map = new Map<string, CountryItem>();
+              for (const c of data.data) {
+                map.set(c.name.toLowerCase(), c);
+              }
+              for (const c of prev) {
+                if (!map.has(c.name.toLowerCase())) {
+                  map.set(c.name.toLowerCase(), c);
+                }
+              }
+              return Array.from(map.values());
+            });
+          }
+        })
+        .catch((e) => console.warn('Live restcountries search error:', e))
+        .finally(() => setIsSearchingApi(false));
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [countrySearch]);
+
   // Fetch cities whenever selected nationality / country changes
   useEffect(() => {
     const countryToFetch = formData.nationality || 'Oman';
@@ -111,7 +146,6 @@ export default function StartJourneyPage() {
       .then((data) => {
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           setCities(data.data);
-          // Set initial city if not set or empty
           if (!data.data.includes(formData.city)) {
             setFormData((prev) => ({ ...prev, city: data.data[0] }));
           }
@@ -132,6 +166,7 @@ export default function StartJourneyPage() {
       nationality: country.name,
       residenceCountry: country.name,
       phone: country.dialCode ? `${country.dialCode} ` : prev.phone,
+      city: country.capital || prev.city,
     }));
   };
 
@@ -367,50 +402,85 @@ export default function StartJourneyPage() {
                         </p>
                       </div>
 
-                      {/* Selected Country Badge */}
-                      <div className="p-3.5 bg-sky-50 rounded-2xl border border-sky-200 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <Globe className="w-4 h-4 text-sky-600" />
-                          <span className="text-xs text-slate-600">Selected Country:</span>
-                          <strong className="text-sm font-bold text-slate-900">
-                            {formData.nationality}
-                          </strong>
+                      {/* Selected Country Banner */}
+                      <div className="p-4 bg-gradient-to-r from-sky-50 to-indigo-50 rounded-2xl border-2 border-sky-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <span className="text-4xl">
+                            {allCountries.find(c => c.name.toLowerCase() === formData.nationality.toLowerCase())?.flag || '🌍'}
+                          </span>
+                          <div>
+                            <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider block">
+                              Selected Patient Country:
+                            </span>
+                            <strong className="text-base font-black text-slate-900">
+                              {formData.nationality}
+                            </strong>
+                            <p className="text-xs text-slate-500">
+                              Dial Code: <span className="font-semibold text-sky-700">{formData.phone.split(' ')[0] || '+'}</span>
+                              {formData.city && <> · Capital / City: <span className="font-semibold text-slate-800">{formData.city}</span></>}
+                            </p>
+                          </div>
                         </div>
-                        <span className="text-xs font-bold text-sky-700 bg-white px-2.5 py-1 rounded-lg border border-sky-100">
-                          Dial Prefix: {formData.phone.split(' ')[0] || '+'}
+                        <span className="px-3 py-1 bg-emerald-500 text-white rounded-full text-xs font-bold flex items-center gap-1 shadow">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed
                         </span>
                       </div>
 
                       {/* Search Bar for All 250+ Countries */}
-                      <div className="relative">
-                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                        <input
-                          type="text"
-                          value={countrySearch}
-                          onChange={(e) => setCountrySearch(e.target.value)}
-                          placeholder="Search any country (e.g. France, Kuwait, Tanzania, Qatar, Canada)..."
-                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50"
-                        />
+                      <div className="space-y-1">
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                          <input
+                            type="text"
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            placeholder="Type to filter country (e.g. Canada, Kenya, Oman, France, Saudi Arabia)..."
+                            className="w-full pl-10 pr-28 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                          />
+                          {isSearchingApi ? (
+                            <span className="absolute right-3 top-2.5 text-[10px] font-bold text-sky-600 animate-pulse">
+                              API Searching...
+                            </span>
+                          ) : countrySearch ? (
+                            <button
+                              type="button"
+                              onClick={() => setCountrySearch('')}
+                              className="absolute right-3 top-2 px-1.5 py-0.5 text-xs text-slate-400 hover:text-slate-600"
+                            >
+                              ✕
+                            </button>
+                          ) : null}
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Click any country card or flag to set your destination. Live search via <strong>api.restcountries.com v5</strong>.
+                        </p>
                       </div>
 
-                      {/* Grid of Countries */}
+                      {/* Grid of Countries: Click Flag to Set Name */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto pr-1">
                         {filteredCountries.map((c) => (
                           <button
-                            key={c.code}
+                            key={c.code || c.name}
                             type="button"
                             onClick={() => selectCountry(c)}
-                            className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 ${
-                              formData.nationality === c.name
-                                ? 'border-sky-500 bg-sky-50 shadow-sm ring-2 ring-sky-500/20'
-                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                            className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 group ${
+                              formData.nationality.toLowerCase() === c.name.toLowerCase()
+                                ? 'border-sky-500 bg-sky-50 shadow-md ring-2 ring-sky-500/30'
+                                : 'border-slate-200 hover:border-sky-300 bg-white hover:bg-slate-50'
                             }`}
                           >
-                            <span className="text-2xl">{c.flag}</span>
-                            <span className={`text-xs font-semibold truncate w-full ${formData.nationality === c.name ? 'text-sky-700' : 'text-slate-700'}`}>
+                            <span className="text-3xl group-hover:scale-110 transition-transform">{c.flag}</span>
+                            <strong className={`text-xs font-bold truncate w-full ${
+                              formData.nationality.toLowerCase() === c.name.toLowerCase() ? 'text-sky-700' : 'text-slate-800'
+                            }`}>
                               {c.name}
-                            </span>
+                            </strong>
                             <span className="text-[10px] text-slate-400">{c.dialCode}</span>
+                            {formData.nationality.toLowerCase() === c.name.toLowerCase() && (
+                              <span className="text-[9px] font-bold text-sky-600 bg-sky-100 px-2 py-0.5 rounded-full mt-0.5">
+                                Selected
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
