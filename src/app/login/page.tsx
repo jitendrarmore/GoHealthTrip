@@ -57,19 +57,29 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // In production, Google Client ID triggers window.google.accounts.id.prompt()
-      // Here we federate a seamless Google authentication payload with user's Google account
-      const googleUser = {
-        email: email || 'patient.google@gmail.com',
-        name: 'International Patient (Google User)',
-        picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
-        googleId: `google_${Date.now()}`,
-      };
+      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        throw new Error(
+          'Firebase API is not yet configured. Please add NEXT_PUBLIC_FIREBASE_API_KEY and credentials to enable live Google Sign-in.'
+        );
+      }
+
+      const { signInWithPopup } = await import('firebase/auth');
+      const { auth, googleProvider } = await import('@/lib/firebase');
+
+      const result = await signInWithPopup(auth, googleProvider);
+      const googleUser = result.user;
+      const idToken = await googleUser.getIdToken();
 
       const res = await fetch('/api/v1/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(googleUser),
+        body: JSON.stringify({
+          email: googleUser.email,
+          name: googleUser.displayName || 'Google Patient',
+          picture: googleUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
+          googleId: googleUser.uid,
+          idToken,
+        }),
       });
 
       const data = await res.json();
@@ -82,7 +92,15 @@ export default function LoginPage() {
 
       router.push('/profile');
     } catch (err: any) {
-      setError(err.message || 'Google federated sign-in failed');
+      if (err?.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled: Google account selection was closed.');
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        setError(
+          'Domain not authorized: Please add "gohealthtrip.vercel.app" to Firebase Console -> Authentication -> Settings -> Authorized Domains.'
+        );
+      } else {
+        setError(err.message || 'Google federated sign-in failed');
+      }
     } finally {
       setLoading(false);
     }
