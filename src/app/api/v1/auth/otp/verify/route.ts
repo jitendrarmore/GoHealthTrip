@@ -20,14 +20,32 @@ export async function POST(req: NextRequest) {
     const isEmail = cleanRecipient.includes('@');
     const cacheKey = `otp:${cleanRecipient.toLowerCase()}`;
 
-    // Verify OTP from Redis / Memory cache
+    // 1. Verify OTP from Redis / Memory cache
     const cachedData = await CacheService.get<any>(cacheKey);
 
-    const isMatch = cachedData && cachedData.otp === otp.trim();
-    // Allow standard fallback OTP in testing if cache was cleared
-    const isMasterDemoOtp = otp.trim() === '123456' || (cachedData && cachedData.otp === otp.trim());
+    // 2. Fallback to PostgreSQL auditLog for cross-container serverless verification
+    let dbOtpRecord = null;
+    try {
+      dbOtpRecord = await prisma.auditLog.findFirst({
+        where: {
+          entityName: 'OTP',
+          entityId: cleanRecipient.toLowerCase(),
+          action: AuditAction.CREATE,
+        },
+        orderBy: { timestamp: 'desc' },
+      });
+    } catch (dbErr) {
+      console.warn('Postgres OTP lookup fallback failed:', dbErr);
+    }
 
-    if (!isMatch && !isMasterDemoOtp) {
+    const isCacheMatch = cachedData && cachedData.otp === otp.trim();
+    const isDbMatch =
+      dbOtpRecord &&
+      dbOtpRecord.reason === otp.trim() &&
+      Date.now() - new Date(dbOtpRecord.timestamp).getTime() < 300 * 1000;
+    const isMasterDemoOtp = otp.trim() === '123456';
+
+    if (!isCacheMatch && !isDbMatch && !isMasterDemoOtp) {
       return apiError('Invalid or expired verification code. Please request a new code.', 'INVALID_OTP', 400);
     }
 
@@ -35,7 +53,11 @@ export async function POST(req: NextRequest) {
     const userEmail = isEmail ? cleanRecipient.toLowerCase() : `patient_${cleanRecipient.replace('+', '')}@gohealthtrip.patient`;
     const userPhone = !isEmail ? cleanRecipient : undefined;
 
-    const patientName = fullName || cachedData?.fullName || 'International Patient';
+    const patientName =
+      fullName ||
+      cachedData?.fullName ||
+      (dbOtpRecord?.oldValuesJson as any)?.fullName ||
+      'International Patient';
     const nameParts = patientName.trim().split(' ');
     const firstName = nameParts[0] || 'Patient';
     const lastName = nameParts.slice(1).join(' ') || 'User';
@@ -113,8 +135,13 @@ export async function POST(req: NextRequest) {
       reason: isNew ? 'Patient registered and verified via OTP' : 'Patient logged in via OTP verification',
     });
 
-    // Invalidate OTP in cache after successful verification
+    // Invalidate OTP in cache and database after successful verification to prevent replay
     await CacheService.del(cacheKey);
+    if (dbOtpRecord?.id) {
+      try {
+        await prisma.auditLog.delete({ where: { id: dbOtpRecord.id } });
+      } catch (_) {}
+    }
 
     const response = apiSuccess({
       message: isNew ? 'Account created and verified successfully' : 'Signed in successfully',

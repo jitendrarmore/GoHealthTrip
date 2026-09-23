@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 import { CacheService } from '@/lib/cache/redis';
 import { apiSuccess, apiError } from '@/lib/api/response';
+import { AuditAction } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
     // Generate secure 6-digit numeric OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Cache OTP in Upstash Redis / Memory cache with 5-minute (300s) TTL
+    // 1. Cache OTP in Upstash Redis / Memory cache with 5-minute (300s) TTL
     const cacheKey = `otp:${cleanRecipient.toLowerCase()}`;
     await CacheService.set(
       cacheKey,
@@ -31,6 +33,25 @@ export async function POST(req: NextRequest) {
       },
       300
     );
+
+    // 2. Persist OTP in PostgreSQL for reliable cross-instance Vercel serverless verification
+    try {
+      await prisma.auditLog.create({
+        data: {
+          entityName: 'OTP',
+          entityId: cleanRecipient.toLowerCase(),
+          action: AuditAction.CREATE,
+          reason: otp,
+          oldValuesJson: {
+            channel,
+            fullName: fullName || 'Patient',
+            expiresAt: Date.now() + 300 * 1000,
+          },
+        },
+      });
+    } catch (dbErr) {
+      console.warn('Postgres OTP backup write failed:', dbErr);
+    }
 
     // Optional Live Providers Execution on Vercel:
     // 1. Resend (Email):
