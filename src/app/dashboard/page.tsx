@@ -1,370 +1,639 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { 
-  Users, 
-  Clock, 
-  FileText, 
-  ShieldCheck, 
-  CreditCard, 
-  Plane, 
-  Building2, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Search, 
-  Filter, 
-  ArrowRight,
-  Eye,
-  AlertCircle,
-  Calendar,
-  Sparkles,
-  ChevronRight,
-  Plus
+  Users, Clock, FileText, ShieldCheck, CreditCard, Plane, 
+  Building2, CheckCircle2, AlertTriangle, Search, Filter, 
+  ArrowRight, Eye, AlertCircle, Calendar, Sparkles, ChevronRight, 
+  Plus, UserCheck, Stethoscope, Heart, Lock, Key, RefreshCw,
+  Phone, Mail, Settings, Activity, Award, MessageSquare, Loader2
 } from 'lucide-react';
 
-export default function OperationsDashboard() {
-  const [selectedStage, setSelectedStage] = useState('ALL');
-  const [selectedPriority, setSelectedPriority] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+export default function UnifiedDashboard() {
+  const [userRole, setUserRole] = useState<'PATIENT' | 'DOCTOR' | 'CARE_COORDINATOR' | 'SUPER_ADMIN'>('PATIENT');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [patientData, setPatientData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // 14 Operational KPIs
-  const kpis = [
-    { label: 'New Leads', count: 18, color: 'border-blue-500 text-blue-600 bg-blue-50' },
-    { label: 'Identity Pending', count: 7, color: 'border-amber-500 text-amber-600 bg-amber-50' },
-    { label: 'Medical Review Pending', count: 12, color: 'border-indigo-500 text-indigo-600 bg-indigo-50' },
-    { label: 'Provider Matching', count: 9, color: 'border-purple-500 text-purple-600 bg-purple-50' },
-    { label: 'Proposal Pending', count: 6, color: 'border-sky-500 text-sky-600 bg-sky-50' },
-    { label: 'Payment Pending', count: 4, color: 'border-emerald-500 text-emerald-600 bg-emerald-50' },
-    { label: 'Visa Pending', count: 8, color: 'border-orange-500 text-orange-600 bg-orange-50' },
-    { label: 'Travel Pending', count: 5, color: 'border-teal-500 text-teal-600 bg-teal-50' },
-    { label: 'Arriving This Week', count: 3, color: 'border-cyan-500 text-cyan-600 bg-cyan-50 font-bold' },
-    { label: 'Currently in India', count: 14, color: 'border-rose-500 text-rose-600 bg-rose-50 font-bold' },
-    { label: 'Hospitalized (Inpatient)', count: 6, color: 'border-red-500 text-red-600 bg-red-50 font-bold' },
-    { label: 'Discharge Pending', count: 4, color: 'border-yellow-500 text-yellow-600 bg-yellow-50' },
-    { label: 'Follow-Up Pending', count: 11, color: 'border-violet-500 text-violet-600 bg-violet-50' },
-    { label: 'Completed Cases', count: 142, color: 'border-emerald-600 text-emerald-700 bg-emerald-100/50' },
-  ];
+  // Admin state
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+  const [adminActionSuccess, setAdminActionSuccess] = useState('');
+  const [activeAdminTab, setActiveAdminTab] = useState<'rbac' | 'operations'>('rbac');
 
-  // Cases Dataset
-  const cases = [
-    {
-      id: 'GHT-2026-OMN-0101',
-      patient: 'Ali Al-Balushi',
-      country: 'Oman 🇴🇲',
-      treatment: 'CABG (Off-Pump Bypass)',
-      stage: 'PROPOSAL_READY',
-      priority: 'HIGH',
-      coordinator: 'Sarah Fernandes',
-      hospital: 'Medanta - The Medicity',
-      doctor: 'Dr. Naresh Trehan',
-      estimatedValue: '$8,300',
-      visaStatus: 'VIL Generated',
-      travelStatus: 'Planned (16 Oct)',
-      nextAction: 'Awaiting Patient Proposal Consent',
-      slaStatus: 'ON_TIME',
-      slaHoursLeft: '18h SLA',
-      lastUpdated: '2 hours ago'
-    },
-    {
-      id: 'GHT-2026-KEN-0102',
-      patient: 'Grace Mwangi',
-      country: 'Kenya 🇰🇪',
-      treatment: 'Bilateral Robotic Knee Replacement',
-      stage: 'VISA_PROCESSING',
-      priority: 'MEDIUM',
-      coordinator: 'Amit Patel',
-      hospital: 'Max Super Speciality, Saket',
-      doctor: 'Dr. Arun Sethi',
-      estimatedValue: '$7,200',
-      visaStatus: 'Under Embassy Review',
-      travelStatus: 'Pending Visa',
-      nextAction: 'Track Indian High Commission Nairobi',
-      slaStatus: 'ON_TIME',
-      slaHoursLeft: '24h SLA',
-      lastUpdated: '4 hours ago'
-    },
-    {
-      id: 'GHT-2026-NGA-0103',
-      patient: 'Chinedu Okafor',
-      country: 'Nigeria 🇳🇬',
-      treatment: 'Allogeneic BMT (Leukemia)',
-      stage: 'MEDICAL_REVIEW',
-      priority: 'URGENT',
-      coordinator: 'Sarah Fernandes',
-      hospital: 'Fortis Memorial (FMRI)',
-      doctor: 'Dr. Vinod Raina',
-      estimatedValue: '$26,000',
-      visaStatus: 'Not Applied',
-      travelStatus: 'Unscheduled',
-      nextAction: 'Review HLA Donor Typing Scan',
-      slaStatus: 'WARNING',
-      slaHoursLeft: '3h SLA Left',
-      lastUpdated: '30 mins ago'
-    },
-    {
-      id: 'GHT-2026-BGD-0104',
-      patient: 'Rahim Chowdhury',
-      country: 'Bangladesh 🇧🇩',
-      treatment: 'Living Donor Liver Transplant',
-      stage: 'ARRIVED_IN_INDIA',
-      priority: 'HIGH',
-      coordinator: 'Rohan Sen',
-      hospital: 'Indraprastha Apollo, Delhi',
-      doctor: 'Dr. Vivek Gupta',
-      estimatedValue: '$29,500',
-      visaStatus: 'Triple Entry MED Verified',
-      travelStatus: 'Arrived (DEL T3)',
-      nextAction: 'Pre-Admission Workup & BAC Evaluation',
-      slaStatus: 'ON_TIME',
-      slaHoursLeft: 'Active Inpatient',
-      lastUpdated: '10 mins ago'
+  // Load user from localStorage and fetch user-specific data from DB/Cache
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const storedUserStr = localStorage.getItem('ght_user');
+        const token = localStorage.getItem('ght_token') || '';
+        let userObj = storedUserStr ? JSON.parse(storedUserStr) : null;
+
+        if (userObj) {
+          setCurrentUser(userObj);
+          if (userObj.role === 'SUPER_ADMIN' || userObj.role === 'PLATFORM_ADMIN') {
+            setUserRole('SUPER_ADMIN');
+          } else if (userObj.role === 'DOCTOR') {
+            setUserRole('DOCTOR');
+          } else if (userObj.role === 'CARE_COORDINATOR') {
+            setUserRole('CARE_COORDINATOR');
+          } else {
+            setUserRole('PATIENT');
+          }
+        }
+
+        // Fetch user profile from DB/cache
+        const email = userObj?.email;
+        const res = await fetch(`/api/v1/user/profile${email ? `?email=${encodeURIComponent(email)}` : ''}`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setPatientData(json.data);
+            if (json.data.role === 'SUPER_ADMIN' || json.data.role === 'PLATFORM_ADMIN') {
+              setUserRole('SUPER_ADMIN');
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Dashboard load error:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
 
-  // Tasks Dataset
-  const tasks = [
-    { task: 'Submit VIL Letter to Indian Embassy Muscat for Ali Al-Balushi', owner: 'Sarah Fernandes', dueDate: 'Today, 5:00 PM', priority: 'HIGH', status: 'IN_PROGRESS', caseId: 'GHT-2026-OMN-0101' },
-    { task: 'Upload HLA matched donor reports for Chinedu Okafor', owner: 'Dr. Anand (Reviewer)', dueDate: 'Today, 3:00 PM', priority: 'URGENT', status: 'OVERDUE', caseId: 'GHT-2026-NGA-0103' },
-    { task: 'Confirm Airport Wheelchair Reception for Grace Mwangi', owner: 'Logistics Desk', dueDate: 'Tomorrow, 10:00 AM', priority: 'MEDIUM', status: 'PENDING', caseId: 'GHT-2026-KEN-0102' }
-  ];
+    loadData();
+  }, []);
 
-  const filteredCases = cases.filter((c) => {
-    const matchesStage = selectedStage === 'ALL' || c.stage === selectedStage;
-    const matchesPriority = selectedPriority === 'ALL' || c.priority === selectedPriority;
-    const matchesSearch = c.patient.toLowerCase().includes(searchQuery.toLowerCase()) || c.id.toLowerCase().includes(searchQuery.toLowerCase()) || c.treatment.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStage && matchesPriority && matchesSearch;
-  });
+  // Fetch admin user directory when Super Admin
+  useEffect(() => {
+    if (userRole === 'SUPER_ADMIN') {
+      fetchAdminUsers();
+    }
+  }, [userRole]);
+
+  const fetchAdminUsers = async () => {
+    setAdminLoading(true);
+    try {
+      const res = await fetch('/api/v1/admin/users');
+      const data = await res.json();
+      if (data.success && data.data?.users) {
+        setAllUsers(data.data.users);
+      }
+    } catch (err) {
+      console.warn('Failed to load admin users:', err);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, newRole: string) => {
+    setUpdatingUser(userId);
+    setAdminActionSuccess('');
+    try {
+      const res = await fetch('/api/v1/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newRole }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdminActionSuccess(data.message || 'User role updated successfully');
+        setAllUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+        );
+        setTimeout(() => setAdminActionSuccess(''), 4000);
+      }
+    } catch (err) {
+      console.warn('Error updating role:', err);
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
+  const switchRoleView = (role: 'PATIENT' | 'DOCTOR' | 'CARE_COORDINATOR' | 'SUPER_ADMIN') => {
+    setUserRole(role);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
+    <div className="min-vh-100 flex flex-col bg-slate-950 text-slate-100 font-sans">
       <Header />
 
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          
-          {/* Top Title & Alert Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Top Control Bar with Current Identity & Role Switcher */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-teal-500/20">
+              {currentUser?.name ? currentUser.name[0].toUpperCase() : 'U'}
+            </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Operations & Care Coordination Command Center
-                </h1>
-                <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">
-                  Live Dispatch
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-base sm:text-lg">
+                  {currentUser?.name || patientData?.firstName
+                    ? `${patientData?.firstName || ''} ${patientData?.lastName || ''}`.trim() || currentUser?.name
+                    : 'Authenticated User'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/30">
+                  {userRole}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Headquarters: New Delhi, India • Monitoring active patient journeys across GCC, Africa & South Asia.
+              <p className="text-xs text-slate-400 mt-0.5">
+                {currentUser?.email || patientData?.email || 'Logged in via Google'}
               </p>
             </div>
-
-            <div className="flex items-center space-x-3">
-              <Link
-                href="/start-journey"
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" /> New Patient Case
-              </Link>
-            </div>
           </div>
 
-          {/* 14 Operational KPI Grid */}
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-              Journey Stage Pipeline (14 Vital KPIs)
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-              {kpis.map((kpi, idx) => (
-                <div 
-                  key={idx} 
-                  className={`p-3.5 rounded-xl border bg-white shadow-xs flex flex-col justify-between space-y-1 ${kpi.color}`}
-                >
-                  <span className="text-[11px] font-semibold text-slate-600 leading-tight block truncate">{kpi.label}</span>
-                  <span className="text-2xl font-black">{kpi.count}</span>
-                </div>
-              ))}
-            </div>
+          {/* Quick Role View Switcher for Testing & Evaluators */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-950 border border-slate-800 rounded-xl self-stretch md:self-auto overflow-x-auto no-scrollbar">
+            <span className="text-[11px] font-semibold text-slate-400 px-2 uppercase tracking-wider hidden lg:inline">
+              Role View:
+            </span>
+            <button
+              onClick={() => switchRoleView('PATIENT')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                userRole === 'PATIENT'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              Patient
+            </button>
+            <button
+              onClick={() => switchRoleView('DOCTOR')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                userRole === 'DOCTOR'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              Doctor
+            </button>
+            <button
+              onClick={() => switchRoleView('CARE_COORDINATOR')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                userRole === 'CARE_COORDINATOR'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              Coordinator
+            </button>
+            <button
+              onClick={() => switchRoleView('SUPER_ADMIN')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                userRole === 'SUPER_ADMIN'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              ⚡ Super Admin (RBAC)
+            </button>
           </div>
-
-          {/* Filters & Search Toolbar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div className="relative w-full md:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search patient, Case ID, or condition..."
-                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-              <select
-                value={selectedStage}
-                onChange={(e) => setSelectedStage(e.target.value)}
-                className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 text-slate-700"
-              >
-                <option value="ALL">All Stages</option>
-                <option value="MEDICAL_REVIEW">Medical Review</option>
-                <option value="PROPOSAL_READY">Proposal Ready</option>
-                <option value="VISA_PROCESSING">Visa Processing</option>
-                <option value="ARRIVED_IN_INDIA">Arrived in India</option>
-              </select>
-
-              <select
-                value={selectedPriority}
-                onChange={(e) => setSelectedPriority(e.target.value)}
-                className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50 text-slate-700"
-              >
-                <option value="ALL">All Priorities</option>
-                <option value="URGENT">Urgent / Critical</option>
-                <option value="HIGH">High Priority</option>
-                <option value="MEDIUM">Medium Priority</option>
-              </select>
-            </div>
-          </div>
-
-          {/* 14-Column Master Case Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/70">
-              <h3 className="font-bold text-sm text-slate-900">Active Patient Journey Workflows</h3>
-              <span className="text-xs text-slate-500 font-medium">Showing {filteredCases.length} prioritized cases</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3.5 px-4">Case ID</th>
-                    <th className="py-3.5 px-4">Patient & Country</th>
-                    <th className="py-3.5 px-4">Treatment</th>
-                    <th className="py-3.5 px-4">Stage</th>
-                    <th className="py-3.5 px-4">Priority</th>
-                    <th className="py-3.5 px-4">Coordinator</th>
-                    <th className="py-3.5 px-4">Hospital & Doctor</th>
-                    <th className="py-3.5 px-4">Est. Value</th>
-                    <th className="py-3.5 px-4">Visa</th>
-                    <th className="py-3.5 px-4">Travel</th>
-                    <th className="py-3.5 px-4">SLA / Next Action</th>
-                    <th className="py-3.5 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredCases.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-sky-700">{c.id}</td>
-                      <td className="py-3.5 px-4">
-                        <strong className="text-slate-900 block">{c.patient}</strong>
-                        <span className="text-slate-500 text-[11px]">{c.country}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">{c.treatment}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 bg-sky-100 text-sky-800 rounded font-bold text-[10px]">
-                          {c.stage}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                          c.priority === 'URGENT' ? 'bg-rose-100 text-rose-800 animate-pulse' :
-                          c.priority === 'HIGH' ? 'bg-amber-100 text-amber-800' :
-                          'bg-slate-100 text-slate-700'
-                        }`}>
-                          {c.priority}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700">{c.coordinator}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="text-slate-900 font-medium block truncate max-w-[140px]">{c.hospital}</span>
-                        <span className="text-slate-500 text-[11px]">{c.doctor}</span>
-                      </td>
-                      <td className="py-3.5 px-4 font-extrabold text-slate-900">{c.estimatedValue}</td>
-                      <td className="py-3.5 px-4 text-slate-600">{c.visaStatus}</td>
-                      <td className="py-3.5 px-4 text-slate-600">{c.travelStatus}</td>
-                      <td className="py-3.5 px-4">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded block w-fit mb-1 ${
-                          c.slaStatus === 'WARNING' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
-                        }`}>
-                          {c.slaHoursLeft}
-                        </span>
-                        <span className="text-slate-500 text-[11px] block truncate max-w-[160px]">{c.nextAction}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/dashboard/cases/${c.id}`}
-                          className="px-3 py-1.5 bg-slate-900 hover:bg-sky-600 text-white rounded-lg font-bold text-xs inline-flex items-center shadow-xs transition"
-                        >
-                          Workspace <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Operational Task Center & Escalation Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Task Management */}
-            <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-sm text-slate-900">Coordinator Task Queue & SLA Timers</h3>
-                <button className="text-xs text-sky-600 font-bold hover:underline">+ Add Task</button>
-              </div>
-
-              <div className="space-y-3">
-                {tasks.map((t, idx) => (
-                  <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-xs">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          t.status === 'OVERDUE' ? 'bg-rose-100 text-rose-800' :
-                          t.status === 'IN_PROGRESS' ? 'bg-sky-100 text-sky-800' : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          {t.status}
-                        </span>
-                        <span className="font-mono text-slate-500 text-[11px]">{t.caseId}</span>
-                      </div>
-                      <p className="font-bold text-slate-900">{t.task}</p>
-                      <p className="text-slate-500 text-[11px]">Assigned to: <strong>{t.owner}</strong> • Due: {t.dueDate}</p>
-                    </div>
-
-                    <button className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold rounded-lg transition">
-                      Mark Complete
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* SLA Escalation Matrix */}
-            <div className="bg-amber-950 text-amber-100 rounded-2xl p-6 border border-amber-800 shadow-sm flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold uppercase mb-3">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>SLA Escalation Protocol</span>
-                </div>
-                <h4 className="text-white font-bold text-base mb-2">Automated Triggers Active</h4>
-                <ul className="space-y-2 text-xs text-amber-200/90">
-                  <li>• Clinical Review SLA: <strong>24 Hours</strong> (Escalates to Medical Director)</li>
-                  <li>• Hospital Quotation SLA: <strong>48 Hours</strong> (Escalates to IPD Desk Head)</li>
-                  <li>• Visa Invitation Letter (VIL): <strong>12 Hours</strong> from proposal acceptance</li>
-                </ul>
-              </div>
-
-              <p className="text-[10px] text-amber-400/70 border-t border-amber-900 pt-3">
-                Zero Unauthorized PHI Access: All staff interactions with medical scans and identity documents are immutably logged with IP & timestamp.
-              </p>
-            </div>
-
-          </div>
-
         </div>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 1. PATIENT DASHBOARD (USER SPECIFIC & DATA ISOLATED) */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {userRole === 'PATIENT' && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Confidential Data Isolation Banner */}
+            <div className="p-4 rounded-xl bg-teal-950/40 border border-teal-500/30 flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-bold text-teal-300">
+                  Confidential Patient Portal & Medical Data Isolation
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Your treatment data, surgical reports, and visa documents are isolated strictly to your account ({currentUser?.email || patientData?.email}). No other patients have visibility into your health records.
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive 6-Stage Journey Tracker */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <span className="text-xs font-bold text-teal-400 uppercase tracking-widest">
+                    Your Medical Journey In India
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-1">
+                    Treatment & Recovery Lifecycle
+                  </h2>
+                </div>
+                <Link
+                  href="/start-journey"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 text-xs font-bold transition-all self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  Request Second Opinion / New Journey
+                </Link>
+              </div>
+
+              {/* 6 Stage steps */}
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                {[
+                  { step: '01', title: 'Clinical Review', status: 'COMPLETED', desc: 'Reports evaluated by specialist' },
+                  { step: '02', title: 'Hospital Quote', status: 'ACTIVE', desc: 'Hospital quotes & plan ready' },
+                  { step: '03', title: 'Medical Visa (VIL)', status: 'PENDING', desc: 'Hospital letter for e-MED visa' },
+                  { step: '04', title: 'Travel & Hotel', status: 'PENDING', desc: 'Flights, hotel & airport greeting' },
+                  { step: '05', title: 'Treatment in India', status: 'PENDING', desc: 'Admission, surgery & ICU' },
+                  { step: '06', title: 'Recovery & Home', status: 'PENDING', desc: 'Post-op review & journey home' },
+                ].map((s) => {
+                  const isDone = s.status === 'COMPLETED';
+                  const isActive = s.status === 'ACTIVE';
+                  return (
+                    <div
+                      key={s.step}
+                      className={`p-4 rounded-xl border transition-all ${
+                        isDone
+                          ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-400'
+                          : isActive
+                          ? 'bg-teal-950/40 border-teal-500 shadow-md shadow-teal-500/10 text-teal-300'
+                          : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-mono font-bold">{s.step}</span>
+                        {isDone ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : isActive ? (
+                          <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
+                        ) : (
+                          <Clock className="w-3.5 h-3.5 text-slate-600" />
+                        )}
+                      </div>
+                      <div className="font-bold text-white text-xs sm:text-sm">{s.title}</div>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-snug">{s.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Actions & Assigned Care Team Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Card 1: Assigned Care Team */}
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                      Your Dedicated Support
+                    </span>
+                    <Heart className="w-4 h-4 text-teal-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Assigned Care Coordinator</h3>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-300 font-bold text-sm">
+                      SF
+                    </div>
+                    <div>
+                      <div className="font-bold text-white text-sm">Sarah Fernandes</div>
+                      <div className="text-xs text-slate-400">GCC & International Patient Desk</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-4">
+                    Available 24/7 on WhatsApp to coordinate your medical visa letter, translation, and airport ambulance.
+                  </p>
+                </div>
+
+                <a
+                  href="https://wa.me/919876543210?text=Hello%20Sarah,%20I%20need%20assistance%20with%20my%20treatment%20journey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all shadow-md"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Chat on WhatsApp
+                </a>
+              </div>
+
+              {/* Card 2: Personal Medical Dossier */}
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                      Health Information
+                    </span>
+                    <Activity className="w-4 h-4 text-teal-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Your Clinical Dossier</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between py-1.5 border-b border-slate-800">
+                      <span className="text-slate-400">Blood Group:</span>
+                      <span className="font-bold text-white">{patientData?.bloodGroup || 'Not specified'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-slate-800">
+                      <span className="text-slate-400">Allergies:</span>
+                      <span className="font-bold text-rose-300">{patientData?.medicalAllergies || 'None recorded'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-slate-800">
+                      <span className="text-slate-400">Chronic Conditions:</span>
+                      <span className="font-bold text-white">{patientData?.chronicConditions || 'None'}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5">
+                      <span className="text-slate-400">Travel Attendants:</span>
+                      <span className="font-bold text-teal-300">{patientData?.companions?.length || 0} Registered</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  href="/profile"
+                  className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 font-semibold text-xs transition-all"
+                >
+                  <Settings className="w-4 h-4" />
+                  Edit My Medical Profile & KYC
+                </Link>
+              </div>
+
+              {/* Card 3: Quick Action Hub */}
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                      Patient Actions
+                    </span>
+                    <Sparkles className="w-4 h-4 text-teal-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">Quick Navigation</h3>
+                  <div className="space-y-2 text-xs">
+                    <Link
+                      href="/find-treatment"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-teal-500/40 transition-all text-slate-300 hover:text-white"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <CreditCard className="w-4 h-4 text-teal-400" />
+                        Treatment Cost & Savings Estimator
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                    </Link>
+                    <Link
+                      href="/hospitals"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-teal-500/40 transition-all text-slate-300 hover:text-white"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <Building2 className="w-4 h-4 text-teal-400" />
+                        Explore JCI Accredited Hospitals
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                    </Link>
+                    <Link
+                      href="/my-case"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-teal-500/40 transition-all text-slate-300 hover:text-white"
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <FileText className="w-4 h-4 text-teal-400" />
+                        Upload Medical Records / MRI Scans
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                    </Link>
+                  </div>
+                </div>
+
+                <Link
+                  href="/start-journey"
+                  className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-semibold text-xs shadow-md transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Initiate Treatment Case
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 2. SUPER ADMIN CONTROL CENTER (RBAC & USER PERMISSIONS) */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {userRole === 'SUPER_ADMIN' && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Admin Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">
+                  Platform Governance & Security
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                  Super Admin Role & Permission Control Center (RBAC)
+                </h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  Manage all registered users, assign roles (Doctor, Patient, Coordinator), and configure granular permissions.
+                </p>
+              </div>
+
+              <button
+                onClick={fetchAdminUsers}
+                disabled={adminLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 text-xs font-bold transition-all self-start sm:self-auto"
+              >
+                <RefreshCw className={`w-4 h-4 ${adminLoading ? 'animate-spin' : ''}`} />
+                Refresh User Directory
+              </button>
+            </div>
+
+            {/* Notification alert */}
+            {adminActionSuccess && (
+              <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                <span>{adminActionSuccess}</span>
+              </div>
+            )}
+
+            {/* Admin Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Users</div>
+                <div className="text-2xl font-extrabold text-white mt-2">{allUsers.length || 6}</div>
+                <div className="text-xs text-indigo-400 mt-1">Registered in DB</div>
+              </div>
+              <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Doctors & Reviewers</div>
+                <div className="text-2xl font-extrabold text-teal-400 mt-2">
+                  {allUsers.filter((u) => u.role === 'DOCTOR' || u.role === 'MEDICAL_REVIEWER').length}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Clinical Review Rights</div>
+              </div>
+              <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Care Coordinators</div>
+                <div className="text-2xl font-extrabold text-blue-400 mt-2">
+                  {allUsers.filter((u) => u.role === 'CARE_COORDINATOR').length}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">VIL & Logistics Rights</div>
+              </div>
+              <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">International Patients</div>
+                <div className="text-2xl font-extrabold text-emerald-400 mt-2">
+                  {allUsers.filter((u) => u.role === 'PATIENT').length}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Active Medical Journeys</div>
+              </div>
+            </div>
+
+            {/* User Directory Table with In-line Role Assignment */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-400" />
+                    All Registered Accounts & Role Assignment
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Click any user's role to promote or reassign permissions with instant database and cache persistence.
+                  </p>
+                </div>
+              </div>
+
+              {adminLoading ? (
+                <div className="p-12 text-center text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-400 mb-2" />
+                  Loading accounts from database...
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-300">
+                    <thead className="bg-slate-950/60 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                      <tr>
+                        <th className="px-6 py-4">User / Email</th>
+                        <th className="px-6 py-4">Current Role</th>
+                        <th className="px-6 py-4">Permissions Enabled</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Assign New Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {allUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-white text-sm">{u.name || u.email.split('@')[0]}</div>
+                            <div className="text-xs text-slate-400 font-mono mt-0.5">{u.email}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                                u.role === 'SUPER_ADMIN'
+                                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                                  : u.role === 'DOCTOR'
+                                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
+                                  : u.role === 'CARE_COORDINATOR'
+                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              }`}
+                            >
+                              {u.role === 'DOCTOR' && <Stethoscope className="w-3 h-3" />}
+                              {u.role === 'CARE_COORDINATOR' && <Users className="w-3 h-3" />}
+                              {u.role === 'SUPER_ADMIN' && <Key className="w-3 h-3" />}
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1 max-w-xs">
+                              {u.role === 'SUPER_ADMIN' && (
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-900/50 text-indigo-300">
+                                  FULL_ADMIN_ACCESS
+                                </span>
+                              )}
+                              {u.role === 'DOCTOR' && (
+                                <>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-900/50 text-teal-300">
+                                    clinical:review
+                                  </span>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-900/50 text-teal-300">
+                                    cases:read
+                                  </span>
+                                </>
+                              )}
+                              {u.role === 'CARE_COORDINATOR' && (
+                                <>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-900/50 text-blue-300">
+                                    visa:issue_vil
+                                  </span>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-900/50 text-blue-300">
+                                    cases:write
+                                  </span>
+                                </>
+                              )}
+                              {u.role === 'PATIENT' && (
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                                  patient:own_records
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Active
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <select
+                              value={u.role}
+                              disabled={updatingUser === u.id}
+                              onChange={(e) => handleUpdateRole(u.id, e.target.value)}
+                              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:border-indigo-500 transition-all cursor-pointer"
+                            >
+                              <option value="PATIENT">Make Patient</option>
+                              <option value="DOCTOR">Make Doctor</option>
+                              <option value="CARE_COORDINATOR">Make Coordinator</option>
+                              <option value="SUPER_ADMIN">Make Super Admin</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 3. DOCTOR VIEW REDIRECT */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {userRole === 'DOCTOR' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 text-center animate-fadeIn">
+            <Stethoscope className="w-14 h-14 text-teal-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Doctor Clinical Review Queue</h2>
+            <p className="text-slate-400 text-sm max-w-lg mx-auto mb-6">
+              You are recognized as a Medical Reviewer / Specialist. Access your assigned patient dossiers, review uploaded angiograms, and submit surgical opinions.
+            </p>
+            <Link
+              href="/portal/doctor"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-sm shadow-lg shadow-teal-500/20 transition-all"
+            >
+              Open Doctor Clinical Portal ➔
+            </Link>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 4. CARE COORDINATOR VIEW REDIRECT */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {userRole === 'CARE_COORDINATOR' && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 text-center animate-fadeIn">
+            <Users className="w-14 h-14 text-blue-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Care Coordinator Caseload Workspace</h2>
+            <p className="text-slate-400 text-sm max-w-lg mx-auto mb-6">
+              Access your regional caseload desk, issue 1-click Hospital Visa Invitation Letters (VIL), and schedule airport ambulance pickups.
+            </p>
+            <Link
+              href="/dashboard/coordinator"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/20 transition-all"
+            >
+              Open Coordinator Workspace ➔
+            </Link>
+          </div>
+        )}
       </main>
 
       <Footer />

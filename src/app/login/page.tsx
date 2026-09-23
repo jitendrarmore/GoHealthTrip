@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ShieldCheck, ArrowRight, Lock, CheckCircle2, User,
-  Stethoscope, Users, HelpCircle, AlertCircle, Eye, EyeOff,
+  Stethoscope, Users, HelpCircle, AlertCircle, Eye, EyeOff, Key,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeRoleMode, setActiveRoleMode] = useState<'PATIENT' | 'DOCTOR' | 'COORDINATOR' | 'SUPPORT'>('PATIENT');
+  const [activeRoleMode, setActiveRoleMode] = useState<'PATIENT' | 'DOCTOR' | 'COORDINATOR' | 'SUPPORT' | 'ADMIN'>('PATIENT');
 
   const handleCredentialLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +84,7 @@ export default function LoginPage() {
       localStorage.setItem('ght_token', data.data.token);
       localStorage.setItem('ght_user', JSON.stringify(data.data.user));
 
-      router.push('/profile');
+      router.push('/dashboard');
     } catch (err: any) {
       if (err?.code === 'auth/popup-closed-by-user') {
         setError('Sign-in cancelled: Google account selection was closed.');
@@ -101,35 +101,37 @@ export default function LoginPage() {
   };
 
   // Instant 1-Click Role Switcher Demo for Evaluators
-  const switchRole = (role: 'PATIENT' | 'DOCTOR' | 'COORDINATOR' | 'SUPPORT') => {
-    setActiveRoleMode(role);
+  const switchRole = (role: 'PATIENT' | 'DOCTOR' | 'COORDINATOR' | 'SUPPORT' | 'ADMIN') => {
+    setActiveRoleMode(role as any);
     if (role === 'PATIENT') {
-      setEmail('ali.albalushi@demo.om');
+      setEmail('patient.google@gmail.com');
       setPassword('Patient@1234');
     } else if (role === 'DOCTOR') {
       setEmail('trehan@medanta.org');
       setPassword('Doctor@1234');
     } else if (role === 'COORDINATOR') {
-      setEmail('sarah.fernandes@gohealthtrip.in');
+      setEmail('sarah.coordinator@gohealthtrip.com');
       setPassword('Coordinator@1234');
+    } else if (role === 'ADMIN') {
+      setEmail('admin@gohealthtrip.com');
+      setPassword('Admin@1234');
     } else if (role === 'SUPPORT') {
       setEmail('vikram.support@gohealthtrip.in');
       setPassword('Support@1234');
     }
   };
 
-  const directDemoLogin = (role: 'PATIENT' | 'DOCTOR' | 'COORDINATOR' | 'SUPPORT') => {
+  const directDemoLogin = (role: 'PATIENT' | 'DOCTOR' | 'COORDINATOR' | 'SUPPORT' | 'ADMIN') => {
     let mockUser: any = {};
     if (role === 'PATIENT') {
       mockUser = {
-        id: 'patient-ali',
-        name: 'Ali Al-Balushi',
-        email: 'ali.albalushi@demo.om',
+        id: 'patient-google',
+        name: 'International Patient',
+        email: email || 'patient.google@gmail.com',
         role: 'PATIENT',
-        country: 'Oman',
       };
       localStorage.setItem('ght_user', JSON.stringify(mockUser));
-      router.push('/profile');
+      router.push('/dashboard');
     } else if (role === 'DOCTOR') {
       mockUser = {
         id: 'doc-trehan',
@@ -144,12 +146,21 @@ export default function LoginPage() {
       mockUser = {
         id: 'coord-sarah',
         name: 'Sarah Fernandes',
-        email: 'sarah.fernandes@gohealthtrip.in',
+        email: 'sarah.coordinator@gohealthtrip.com',
         role: 'CARE_COORDINATOR',
         desk: 'GCC & Middle East',
       };
       localStorage.setItem('ght_user', JSON.stringify(mockUser));
       router.push('/dashboard/coordinator');
+    } else if (role === 'ADMIN') {
+      mockUser = {
+        id: 'admin-super',
+        name: 'Platform Super Admin',
+        email: 'admin@gohealthtrip.com',
+        role: 'SUPER_ADMIN',
+      };
+      localStorage.setItem('ght_user', JSON.stringify(mockUser));
+      router.push('/dashboard');
     } else if (role === 'SUPPORT') {
       mockUser = {
         id: 'supp-vikram',
@@ -188,11 +199,12 @@ export default function LoginPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 pb-1.5 text-center">
               1-Click Role Switcher Demo:
             </span>
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-5 gap-1">
               {[
                 { id: 'PATIENT', label: 'Patient', icon: User },
                 { id: 'DOCTOR', label: 'Doctor', icon: Stethoscope },
                 { id: 'COORDINATOR', label: 'Coord.', icon: Users },
+                { id: 'ADMIN', label: 'Admin', icon: Key },
                 { id: 'SUPPORT', label: 'Support', icon: HelpCircle },
               ].map((tab) => {
                 const Icon = tab.icon;

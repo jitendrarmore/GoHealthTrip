@@ -29,11 +29,11 @@ export default function Header() {
 
   const navLinks = [
     { name: 'Home', href: '/' },
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Patient Profile', href: '/profile' },
     { name: 'Find Treatment', href: '/find-treatment' },
     { name: 'Hospitals', href: '/hospitals' },
-    { name: 'Patient Profile', href: '/profile' },
     { name: 'My Case', href: '/my-case' },
-    { name: 'Demo Case', href: '/demo-case' },
   ];
 
   return (
@@ -117,6 +117,17 @@ export default function Header() {
                     <div>
                       <span className="block font-bold">Support Manager</span>
                       <span className="text-[10px] text-slate-400">Escalations & Tickets</span>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setPortalsOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition border-t border-slate-100 mt-1 pt-2"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                    <div>
+                      <span className="block font-bold">Admin Control Center</span>
+                      <span className="text-[10px] text-slate-400">Roles & Permissions (RBAC)</span>
                     </div>
                   </Link>
                 </div>

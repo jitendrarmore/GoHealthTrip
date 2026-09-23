@@ -95,6 +95,10 @@ export class CacheService {
     }
   }
 
+  static async del(key: string): Promise<void> {
+    return this.delete(key);
+  }
+
   /**
    * Cache-aside pattern: Fetch from cache or compute and cache
    */
