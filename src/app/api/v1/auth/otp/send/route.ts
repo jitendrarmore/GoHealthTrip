@@ -121,8 +121,6 @@ export async function POST(req: NextRequest) {
       recipient: cleanRecipient,
       channel,
       expiresInSeconds: 300,
-      // Verified preview code for frictionless testing & evaluation
-      demoOtp: otp,
     });
   } catch (error: any) {
     console.error('OTP Send Error:', error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -27,12 +27,22 @@ export default function PatientSignUpPage() {
   // OTP State
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
-  const [demoCode, setDemoCode] = useState<string | null>(null);
+  const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [countdown, setCountdown] = useState(60);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Focus first digit box when step 2 is active
+  useEffect(() => {
+    if (otpSent) {
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 150);
+    }
+  }, [otpSent]);
 
   // Countdown timer
   useEffect(() => {
@@ -79,10 +89,12 @@ export default function PatientSignUpPage() {
 
       setOtpSent(true);
       setCountdown(60);
-      setSuccessMsg(data.data.message || 'Verification code sent!');
-      if (data.data.demoOtp) {
-        setDemoCode(data.data.demoOtp);
-      }
+      setDigits(['', '', '', '', '', '']);
+      setOtp('');
+      const channelLabel = method === 'PHONE'
+        ? (phoneChannel === 'WHATSAPP' ? 'WhatsApp' : 'SMS')
+        : 'Email';
+      setSuccessMsg(`Verification code sent via ${channelLabel}! Please check your messages.`);
     } catch (err: any) {
       setError(err.message || 'Failed to send verification code.');
     } finally {
@@ -90,8 +102,8 @@ export default function PatientSignUpPage() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeVerify = async (codeToVerify: string) => {
+    if (!codeToVerify || codeToVerify.length !== 6) return;
     setError('');
     setVerifying(true);
 
@@ -101,7 +113,7 @@ export default function PatientSignUpPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient: targetRecipient,
-          otp: otp.trim(),
+          otp: codeToVerify.trim(),
           fullName: fullName.trim() || 'Patient',
         }),
       });
@@ -120,6 +132,69 @@ export default function PatientSignUpPage() {
     } finally {
       setVerifying(false);
     }
+  };
+
+  const handleDigitChange = (index: number, val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (!clean) {
+      const nextDigits = [...digits];
+      nextDigits[index] = '';
+      setDigits(nextDigits);
+      setOtp(nextDigits.join(''));
+      return;
+    }
+
+    const char = clean.slice(-1);
+    const nextDigits = [...digits];
+    nextDigits[index] = char;
+    setDigits(nextDigits);
+    const fullCode = nextDigits.join('');
+    setOtp(fullCode);
+
+    if (index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    if (fullCode.length === 6) {
+      executeVerify(fullCode);
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (!digits[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    const nextDigits = [...digits];
+    for (let i = 0; i < 6; i++) {
+      nextDigits[i] = pasted[i] || '';
+    }
+    setDigits(nextDigits);
+    const fullCode = nextDigits.join('');
+    setOtp(fullCode);
+
+    const nextIndex = Math.min(pasted.length, 5);
+    inputRefs.current[nextIndex]?.focus();
+
+    if (fullCode.length === 6) {
+      executeVerify(fullCode);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeVerify(digits.join(''));
   };
 
   // Google 1-click fallback
@@ -202,21 +277,6 @@ export default function PatientSignUpPage() {
               <div className="p-3.5 bg-teal-500/10 border border-teal-500/20 text-teal-300 rounded-xl text-xs flex items-center gap-2.5">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-teal-400" />
                 <span>{successMsg}</span>
-              </div>
-            )}
-
-            {/* Simulated Verified OTP Banner for Frictionless Testing */}
-            {demoCode && otpSent && (
-              <div className="p-4 rounded-xl bg-teal-950/60 border border-teal-500/40 text-center animate-fadeIn">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-teal-400 mb-1">
-                  Verified Verification Code
-                </div>
-                <div className="text-2xl font-mono font-black text-white tracking-widest bg-slate-900/80 py-1.5 px-4 rounded-lg inline-block border border-teal-500/30">
-                  {demoCode}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  Enter this 6-digit code below to complete instant verification.
-                </p>
               </div>
             )}
 
@@ -408,59 +468,103 @@ export default function PatientSignUpPage() {
               </form>
             ) : (
               /* STEP 2: Enter & Verify OTP */
-              <form onSubmit={handleVerifyOtp} className="space-y-5 animate-fadeIn">
-                <div className="text-center">
-                  <div className="text-xs text-slate-400">
-                    We sent a 6-digit code to{' '}
-                    <span className="font-bold text-teal-300 font-mono">{targetRecipient}</span>
+              <form onSubmit={handleVerifyOtp} className="space-y-6 animate-fadeIn">
+                {/* Channel-Specific Notification Badge */}
+                <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-start gap-3.5 shadow-sm">
+                  <div className={`p-2.5 rounded-xl flex-shrink-0 ${
+                    method === 'PHONE' && phoneChannel === 'WHATSAPP'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : method === 'PHONE'
+                      ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20'
+                      : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                  }`}>
+                    {method === 'PHONE' && phoneChannel === 'WHATSAPP' ? (
+                      <MessageSquare className="w-5 h-5" />
+                    ) : method === 'PHONE' ? (
+                      <Smartphone className="w-5 h-5" />
+                    ) : (
+                      <Mail className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                      {method === 'PHONE' && phoneChannel === 'WHATSAPP'
+                        ? 'WhatsApp Verification Code Sent'
+                        : method === 'PHONE'
+                        ? 'SMS Verification Code Sent'
+                        : 'Email Verification Code Sent'}
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      We sent a 6-digit code to{' '}
+                      <span className="font-bold text-teal-300 font-mono">{targetRecipient}</span>.
+                      Please check your {method === 'PHONE' && phoneChannel === 'WHATSAPP' ? 'WhatsApp' : method === 'PHONE' ? 'SMS messages' : 'inbox/spam folder'} and enter it below.
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 text-center">
-                    Enter 6-Digit Verification Code
+                {/* 6-Box Segmented PIN Input */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider text-center">
+                    Enter 6-Digit Code
                   </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    autoFocus
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="••••••"
-                    className="w-full py-3 px-4 rounded-xl border border-teal-500/60 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:border-teal-400 bg-slate-950 text-white shadow-inner"
-                  />
+                  <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+                    {digits.map((digit, idx) => (
+                      <input
+                        key={idx}
+                        ref={(el) => { inputRefs.current[idx] = el; }}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleDigitChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(idx, e)}
+                        className={`w-11 h-14 sm:w-12 sm:h-16 text-center text-2xl sm:text-3xl font-mono font-bold rounded-xl border bg-slate-950 text-white transition-all shadow-inner focus:outline-none ${
+                          digit
+                            ? 'border-teal-400 bg-teal-950/20 shadow-[0_0_12px_rgba(20,184,166,0.25)]'
+                            : 'border-slate-700 focus:border-teal-400 focus:bg-slate-900'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-slate-400 text-center">
+                    Tip: You can also copy and paste the 6-digit code directly.
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                {/* Actions: Change Number/Email & Resend */}
+                <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-700/60">
                   <button
                     type="button"
                     onClick={() => {
                       setOtpSent(false);
-                      setDemoCode(null);
+                      setDigits(['', '', '', '', '', '']);
+                      setOtp('');
+                      setError('');
                     }}
-                    className="text-slate-400 hover:text-white underline"
+                    className="text-slate-400 hover:text-white underline transition"
                   >
-                    Change Number/Email
+                    Change Number or Email
                   </button>
 
                   <button
                     type="button"
                     disabled={countdown > 0 || sending}
                     onClick={() => handleSendOtp()}
-                    className={`flex items-center gap-1 font-semibold ${
-                      countdown > 0 ? 'text-slate-500 cursor-not-allowed' : 'text-teal-400 hover:underline'
+                    className={`flex items-center gap-1.5 font-semibold transition ${
+                      countdown > 0 ? 'text-slate-500 cursor-not-allowed' : 'text-teal-400 hover:text-teal-300 underline'
                     }`}
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <RefreshCw className={`w-3.5 h-3.5 ${sending ? 'animate-spin' : ''}`} />
                     <span>{countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}</span>
                   </button>
                 </div>
 
+                {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={verifying || otp.length < 6}
-                  className="w-full py-3 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-teal-500/20 text-sm transition flex items-center justify-center gap-2"
+                  disabled={verifying || digits.join('').length < 6}
+                  className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-teal-500/20 text-sm transition flex items-center justify-center gap-2"
                 >
                   {verifying ? (
                     <>
