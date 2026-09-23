@@ -394,18 +394,17 @@ export default function HomePage() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
-                World-Class
+                From Anywhere
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">
-                  Treatment
+                  in the World.
                 </span>
                 <br />
-                A Healthier Tomorrow
+                To Better Care in India.
               </h1>
 
               <p className="mt-5 text-slate-300 text-base lg:text-lg leading-relaxed max-w-md">
-                Trusted Medical Care in India for a <strong className="text-white">Healthier, Happier You.</strong>
-                {' '}From Middle East, Europe and around the world to a healthier tomorrow.
+                One trusted journey from your first medical report to treatment, recovery, and the journey home.
               </p>
 
               {/* 4 trust pillars */}
