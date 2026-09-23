@@ -1,36 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 import {
   CheckCircle2, ArrowRight, ArrowLeft, Upload, ShieldCheck,
   FileText, Building2, AlertCircle, Sparkles, Globe2,
-  BadgeCheck, Lock, Users, Clock3,
+  BadgeCheck, Lock, Users, Clock3, Search, MapPin, Globe,
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface CountryItem {
+  name: string;
+  code: string;
+  flag: string;
+  dialCode: string;
+  popular?: boolean;
+}
+
+const DEFAULT_POPULAR_COUNTRIES: CountryItem[] = [
+  { name: 'Oman', flag: '🇴🇲', code: 'OMN', dialCode: '+968', popular: true },
+  { name: 'United Arab Emirates', flag: '🇦🇪', code: 'ARE', dialCode: '+971', popular: true },
+  { name: 'Saudi Arabia', flag: '🇸🇦', code: 'SAU', dialCode: '+966', popular: true },
+  { name: 'Kenya', flag: '🇰🇪', code: 'KEN', dialCode: '+254', popular: true },
+  { name: 'Nigeria', flag: '🇳🇬', code: 'NGA', dialCode: '+234', popular: true },
+  { name: 'Bangladesh', flag: '🇧🇩', code: 'BGD', dialCode: '+880', popular: true },
+  { name: 'Uzbekistan', flag: '🇺🇿', code: 'UZB', dialCode: '+998', popular: true },
+  { name: 'United Kingdom', flag: '🇬🇧', code: 'GBR', dialCode: '+44', popular: true },
+  { name: 'United States', flag: '🇺🇸', code: 'USA', dialCode: '+1', popular: true },
+  { name: 'Tanzania', flag: '🇹🇿', code: 'TZA', dialCode: '+255', popular: true },
+  { name: 'Kuwait', flag: '🇰🇼', code: 'KWT', dialCode: '+965', popular: true },
+  { name: 'Qatar', flag: '🇶🇦', code: 'QAT', dialCode: '+974', popular: true },
+];
+
 const stepMeta = [
   { label: 'Country & Nationality',           icon: Globe2,       img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=70' },
-  { label: 'Identity & Contact',              icon: BadgeCheck,   img: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=70' },
+  { label: 'Identity, City & Contact',        icon: BadgeCheck,   img: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=70' },
   { label: 'Medical Condition',               icon: Sparkles,     img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&q=70' },
   { label: 'Medical Records & Reports',       icon: FileText,     img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=70' },
   { label: 'Treatment Requested',             icon: ShieldCheck,  img: 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=600&q=70' },
   { label: 'Preferred Destination in India',  icon: Building2,    img: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=600&q=70' },
   { label: 'Budget & Travel Timeframe',       icon: Clock3,       img: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=70' },
   { label: 'Review & Submit Case',            icon: CheckCircle2, img: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600&q=70' },
-];
-
-const countries = [
-  { name: 'Oman',                flag: '🇴🇲', code: 'OMN' },
-  { name: 'United Arab Emirates',flag: '🇦🇪', code: 'ARE' },
-  { name: 'Kenya',               flag: '🇰🇪', code: 'KEN' },
-  { name: 'Nigeria',             flag: '🇳🇬', code: 'NGA' },
-  { name: 'Bangladesh',          flag: '🇧🇩', code: 'BGD' },
-  { name: 'Uzbekistan',          flag: '🇺🇿', code: 'UZB' },
-  { name: 'United Kingdom',      flag: '🇬🇧', code: 'GBR' },
-  { name: 'United States',       flag: '🇺🇸', code: 'USA' },
 ];
 
 const locations = [
@@ -45,9 +57,21 @@ const locations = [
 export default function StartJourneyPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Geo state
+  const [allCountries, setAllCountries] = useState<CountryItem[]>(DEFAULT_POPULAR_COUNTRIES);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [cities, setCities] = useState<string[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [isCustomCity, setIsCustomCity] = useState(false);
+  const [isCustomCountry, setIsCustomCountry] = useState(false);
+  const [customCountryName, setCustomCountryName] = useState('');
+
   const [formData, setFormData] = useState({
     nationality: 'Oman',
     residenceCountry: 'Oman',
+    city: 'Muscat',
+    customCity: '',
     passportExpiry: '2030-05-20',
     firstName: 'Ali',
     lastName: 'Al-Balushi',
@@ -66,6 +90,86 @@ export default function StartJourneyPage() {
     needsAttendantVisa: true,
   });
 
+  // Fetch full list of world countries on mount
+  useEffect(() => {
+    fetch('/api/v1/geo/countries')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setAllCountries(data.data);
+        }
+      })
+      .catch((err) => console.warn('Using bundled countries fallback:', err));
+  }, []);
+
+  // Fetch cities whenever selected nationality / country changes
+  useEffect(() => {
+    const countryToFetch = formData.nationality || 'Oman';
+    setLoadingCities(true);
+    fetch(`/api/v1/geo/cities?country=${encodeURIComponent(countryToFetch)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setCities(data.data);
+          // Set initial city if not set or empty
+          if (!data.data.includes(formData.city)) {
+            setFormData((prev) => ({ ...prev, city: data.data[0] }));
+          }
+        } else {
+          setCities(['Main City / Capital', 'Other City']);
+        }
+      })
+      .catch(() => {
+        setCities(['Main City / Capital', 'Other City']);
+      })
+      .finally(() => setLoadingCities(false));
+  }, [formData.nationality]);
+
+  const selectCountry = (country: CountryItem) => {
+    setIsCustomCountry(false);
+    setFormData((prev) => ({
+      ...prev,
+      nationality: country.name,
+      residenceCountry: country.name,
+      phone: country.dialCode ? `${country.dialCode} ` : prev.phone,
+    }));
+  };
+
+  const handleCustomCountrySubmit = () => {
+    if (!customCountryName.trim()) return;
+    setFormData((prev) => ({
+      ...prev,
+      nationality: customCountryName.trim(),
+      residenceCountry: customCountryName.trim(),
+    }));
+    setIsCustomCountry(true);
+  };
+
+  const handleGoogleFastFill = async () => {
+    try {
+      const res = await fetch('/api/v1/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'patient.google@gmail.com',
+          name: 'Ahmed Al-Kindi',
+          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData((prev) => ({
+          ...prev,
+          firstName: 'Ahmed',
+          lastName: 'Al-Kindi',
+          email: 'patient.google@gmail.com',
+        }));
+      }
+    } catch (e) {
+      console.warn('Google fast fill error:', e);
+    }
+  };
+
   const progress = Math.round((currentStep / 8) * 100);
   const meta = stepMeta[currentStep - 1];
   const StepIcon = meta.icon;
@@ -80,8 +184,17 @@ export default function StartJourneyPage() {
 
   const inputClass = 'w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-white transition';
 
+  const filteredCountries = countrySearch.trim()
+    ? allCountries.filter(
+        (c) =>
+          c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+          c.code.toLowerCase().includes(countrySearch.toLowerCase()) ||
+          c.dialCode.includes(countrySearch)
+      )
+    : allCountries;
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       <Header />
 
       <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
@@ -143,6 +256,7 @@ export default function StartJourneyPage() {
                   {[
                     ['Case Number', 'GHT-2026-OMN-0101', 'font-mono text-slate-900'],
                     ['Assigned Coordinator', 'Sarah Fernandes (GCC Desk)', 'text-slate-900'],
+                    ['Origin Location', `${formData.city}, ${formData.nationality}`, 'text-slate-900'],
                     ['Clinical Review SLA', 'Under Evaluation (12–24h)', 'text-sky-600'],
                   ].map(([k, v, vClass]) => (
                     <div key={k as string} className="flex justify-between items-center">
@@ -154,10 +268,17 @@ export default function StartJourneyPage() {
                 <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                   Our clinical review team in New Delhi has received your reports. We are preparing structured quotes from accredited partner hospitals.
                 </p>
-                <Link href="/my-case"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-all text-sm">
-                  Open My Case Dashboard <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="flex flex-col sm:flex-row justify-center gap-3">
+                  <Link href="/profile"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-all text-sm">
+                    <span>Manage My Patient Profile</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link href="/my-case"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-all text-sm">
+                    View Live Timeline
+                  </Link>
+                </div>
               </div>
             </div>
           ) : (
@@ -231,60 +352,209 @@ export default function StartJourneyPage() {
 
                 <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 space-y-6">
 
-                  {/* STEP 1 */}
+                  {/* ── STEP 1: FREE COUNTRIES API + SEARCH + CUSTOM OPTION ── */}
                   {currentStep === 1 && (
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-lg font-bold text-slate-900">Select Your Country of Origin</h3>
-                        <p className="text-xs text-slate-500 mt-1">This configures your Indian medical visa requirements and document checklist.</p>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-bold text-slate-900">Select Your Country of Origin</h3>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                            250+ Countries Live
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Configures your Indian e-Medical Visa eligibility, airport routing, and document checklist.
+                        </p>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {countries.map((c) => (
-                          <button key={c.code} type="button"
-                            onClick={() => setFormData({ ...formData, nationality: c.name, residenceCountry: c.name })}
-                            className={`p-4 rounded-2xl border-2 text-center transition flex flex-col items-center gap-1.5 ${
+
+                      {/* Selected Country Badge */}
+                      <div className="p-3.5 bg-sky-50 rounded-2xl border border-sky-200 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <Globe className="w-4 h-4 text-sky-600" />
+                          <span className="text-xs text-slate-600">Selected Country:</span>
+                          <strong className="text-sm font-bold text-slate-900">
+                            {formData.nationality}
+                          </strong>
+                        </div>
+                        <span className="text-xs font-bold text-sky-700 bg-white px-2.5 py-1 rounded-lg border border-sky-100">
+                          Dial Prefix: {formData.phone.split(' ')[0] || '+'}
+                        </span>
+                      </div>
+
+                      {/* Search Bar for All 250+ Countries */}
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                        <input
+                          type="text"
+                          value={countrySearch}
+                          onChange={(e) => setCountrySearch(e.target.value)}
+                          placeholder="Search any country (e.g. France, Kuwait, Tanzania, Qatar, Canada)..."
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                        />
+                      </div>
+
+                      {/* Grid of Countries */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                        {filteredCountries.map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => selectCountry(c)}
+                            className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 ${
                               formData.nationality === c.name
-                                ? 'border-sky-500 bg-sky-50 shadow-md ring-2 ring-sky-500/20'
+                                ? 'border-sky-500 bg-sky-50 shadow-sm ring-2 ring-sky-500/20'
                                 : 'border-slate-200 hover:border-slate-300 bg-white'
-                            }`}>
-                            <span className="text-3xl">{c.flag}</span>
-                            <span className={`text-xs font-semibold ${formData.nationality === c.name ? 'text-sky-700' : 'text-slate-600'}`}>{c.name}</span>
-                            {formData.nationality === c.name && <CheckCircle2 className="w-3.5 h-3.5 text-sky-500" />}
+                            }`}
+                          >
+                            <span className="text-2xl">{c.flag}</span>
+                            <span className={`text-xs font-semibold truncate w-full ${formData.nationality === c.name ? 'text-sky-700' : 'text-slate-700'}`}>
+                              {c.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400">{c.dialCode}</span>
                           </button>
                         ))}
                       </div>
+
+                      {/* Custom Country Manual Entry Option */}
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                          <span className="font-semibold">Don't see your country? Enter custom:</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={customCountryName}
+                            onChange={(e) => setCustomCountryName(e.target.value)}
+                            placeholder="Type custom country name..."
+                            className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCustomCountrySubmit}
+                            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition"
+                          >
+                            Set Country
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* STEP 2 */}
+                  {/* ── STEP 2: IDENTITY, CITY & GOOGLE FEDERATED SIGN-UP ── */}
                   {currentStep === 2 && (
                     <div className="space-y-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">Patient Identity & Contact Information</h3>
-                        <p className="text-xs text-slate-500 mt-1">Enter details exactly as they appear on your passport.</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">Patient Identity, City & Contact</h3>
+                          <p className="text-xs text-slate-500 mt-0.5">Enter details exactly as they appear on your passport.</p>
+                        </div>
+
+                        {/* Fast Fill with Google Button */}
+                        <button
+                          type="button"
+                          onClick={handleGoogleFastFill}
+                          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 shadow-sm transition"
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                          </svg>
+                          <span>Fast Fill with Google</span>
+                        </button>
                       </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {[
-                          { key: 'firstName', label: 'First Name (as on Passport)', type: 'text' },
-                          { key: 'lastName', label: 'Last Name', type: 'text' },
-                          { key: 'email', label: 'Email Address', type: 'email' },
-                          { key: 'phone', label: 'WhatsApp / Phone Number', type: 'tel' },
-                        ].map(({ key, label, type }) => (
-                          <div key={key}>
-                            <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">{label}</label>
-                            <input
-                              type={type}
-                              value={(formData as unknown as Record<string, string>)[key]}
-                              onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                              className={inputClass}
-                            />
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">First Name (as on Passport)</label>
+                          <input
+                            type="text"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Last Name</label>
+                          <input
+                            type="text"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+                          <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                            WhatsApp / Phone (Prefix: {formData.nationality})
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            className={inputClass}
+                          />
+                        </div>
+                      </div>
+
+                      {/* City Selector using City API */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-bold text-slate-700 uppercase">
+                            City of Residence in {formData.nationality}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setIsCustomCity(!isCustomCity)}
+                            className="text-xs text-sky-600 hover:text-sky-700 font-semibold"
+                          >
+                            {isCustomCity ? 'Choose from list' : 'Type custom city'}
+                          </button>
+                        </div>
+
+                        {isCustomCity ? (
+                          <input
+                            type="text"
+                            value={formData.city}
+                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            placeholder="Type your city name..."
+                            className={inputClass}
+                          />
+                        ) : (
+                          <div className="relative">
+                            <select
+                              value={formData.city}
+                              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                              aria-label="Select City of Residence"
+                              className={inputClass + ' appearance-none cursor-pointer'}
+                            >
+                              {cities.map((city) => (
+                                <option key={city} value={city}>
+                                  {city}
+                                </option>
+                              ))}
+                              <option value="Other">Other / Not Listed</option>
+                            </select>
+                            <MapPin className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
                           </div>
-                        ))}
+                        )}
+                        <p className="text-[11px] text-slate-400">
+                          {loadingCities ? 'Loading cities...' : `Found ${cities.length} major cities in ${formData.nationality}. Used to plan airport transfer.`}
+                        </p>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 3 */}
+                  {/* ── STEP 3: MEDICAL CONDITION ── */}
                   {currentStep === 3 && (
                     <div className="space-y-4">
                       <div>
@@ -308,7 +578,7 @@ export default function StartJourneyPage() {
                     </div>
                   )}
 
-                  {/* STEP 4 */}
+                  {/* ── STEP 4: MEDICAL DOCUMENTS ── */}
                   {currentStep === 4 && (
                     <div className="space-y-4">
                       <div>
@@ -340,7 +610,7 @@ export default function StartJourneyPage() {
                     </div>
                   )}
 
-                  {/* STEP 5 */}
+                  {/* ── STEP 5: TREATMENT REQUESTED ── */}
                   {currentStep === 5 && (
                     <div className="space-y-4">
                       <div>
@@ -360,7 +630,7 @@ export default function StartJourneyPage() {
                     </div>
                   )}
 
-                  {/* STEP 6 */}
+                  {/* ── STEP 6: PREFERRED DESTINATION ── */}
                   {currentStep === 6 && (
                     <div className="space-y-4">
                       <div>
@@ -384,7 +654,7 @@ export default function StartJourneyPage() {
                     </div>
                   )}
 
-                  {/* STEP 7 */}
+                  {/* ── STEP 7: BUDGET & TIMEFRAME ── */}
                   {currentStep === 7 && (
                     <div className="space-y-4">
                       <div>
@@ -396,6 +666,7 @@ export default function StartJourneyPage() {
                           <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Estimated Budget (USD)</label>
                           <select value={formData.budgetRange}
                             onChange={(e) => setFormData({ ...formData, budgetRange: e.target.value })}
+                            aria-label="Select Budget Range"
                             className={inputClass}>
                             <option>$3,000 - $5,000 USD</option>
                             <option>$5,000 - $8,000 USD</option>
@@ -414,7 +685,7 @@ export default function StartJourneyPage() {
                     </div>
                   )}
 
-                  {/* STEP 8 */}
+                  {/* ── STEP 8: REVIEW & SUBMIT ── */}
                   {currentStep === 8 && (
                     <div className="space-y-4">
                       <div>
@@ -423,7 +694,10 @@ export default function StartJourneyPage() {
                       </div>
                       <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-sm">
                         {[
-                          ['Patient', `${formData.firstName} ${formData.lastName} (${formData.nationality})`],
+                          ['Patient', `${formData.firstName} ${formData.lastName}`],
+                          ['Origin Country & City', `${formData.city}, ${formData.nationality}`],
+                          ['Phone / WhatsApp', formData.phone],
+                          ['Email', formData.email],
                           ['Condition', formData.primaryCondition],
                           ['Treatment', formData.treatmentRequested],
                           ['Destination', formData.preferredLocation],
@@ -444,7 +718,7 @@ export default function StartJourneyPage() {
                     </div>
                   )}
 
-                  {/* Navigation */}
+                  {/* Navigation Buttons */}
                   <div className="flex justify-between items-center pt-4 border-t border-slate-100">
                     {currentStep > 1 ? (
                       <button type="button" onClick={handleBack}
