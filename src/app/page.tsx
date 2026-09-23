@@ -8,7 +8,7 @@ import {
   Wallet, Award, Heart, Handshake, Smile,
   CheckCircle2, Lock, Phone, Globe, Menu, X, Quote,
   ChevronRight, Users, Building2, TrendingUp, Clock3,
-  CreditCard, Zap, PlayCircle,
+  CreditCard, Zap, PlayCircle, Plane, MapPin,
 } from 'lucide-react';
 
 /* ─── Animated Counter ───────────────────────────────── */
@@ -90,17 +90,17 @@ const journeySteps = [
   },
   {
     num: '4',
-    title: 'Confirm & Prepare',
+    title: 'Confirm & Prepare (Visa & Travel)',
     color: 'bg-amber-500',
     textColor: 'text-amber-700',
     borderColor: 'border-amber-500',
-    img: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=480&q=75',
-    imgAlt: 'Travel documents and visa',
+    img: '/medical-travel-map.png',
+    imgAlt: 'Global flight routes and medical travel map to India',
     bullets: [
       'Confirm your treatment plan',
       'Pay initial platform fees',
       'We assist with medical visa for patient & family',
-      'Handle travel, stay & logistics',
+      'Handle flight booking, stay & airport logistics',
     ],
   },
   {
@@ -250,7 +250,59 @@ const testimonials = [
   },
 ];
 
+const flightCorridors = [
+  {
+    region: 'Middle East & GCC',
+    flag: '🇴🇲',
+    origins: 'Muscat · Dubai · Doha · Riyadh · Kuwait',
+    destinations: 'Delhi NCR · Mumbai · Bengaluru',
+    duration: '3h 15m average direct flight',
+    visaTime: '48h e-Medical Visa',
+    highlight: 'Dedicated Arabic care navigators & Halal meals',
+    color: 'border-l-sky-500',
+    badge: 'High Frequency',
+    badgeColor: 'bg-sky-100 text-sky-800',
+  },
+  {
+    region: 'East & West Africa',
+    flag: '🇰🇪',
+    origins: 'Nairobi · Lagos · Dar es Salaam · Addis Ababa',
+    destinations: 'Mumbai · New Delhi · Chennai',
+    duration: '5h 45m direct flight',
+    visaTime: '72h Fast-Track Visa Assistance',
+    highlight: 'Airport ambulance reception & Swahili translators',
+    color: 'border-l-emerald-500',
+    badge: 'Popular Corridor',
+    badgeColor: 'bg-emerald-100 text-emerald-800',
+  },
+  {
+    region: 'Central Asia & CIS',
+    flag: '🇺🇿',
+    origins: 'Tashkent · Almaty · Bishkek · Moscow',
+    destinations: 'New Delhi (Indira Gandhi Int’l)',
+    duration: '3h 30m direct flight',
+    visaTime: '48h e-Med Visa',
+    highlight: 'Russian medical translation & embassy liaison',
+    color: 'border-l-violet-500',
+    badge: 'Direct Flights',
+    badgeColor: 'bg-violet-100 text-violet-800',
+  },
+  {
+    region: 'South Asia & Global',
+    flag: '🇧🇩',
+    origins: 'Dhaka · London · Chittagong · Colombo',
+    destinations: 'Kolkata · Delhi · Chennai',
+    duration: '2h 15m short-haul / Direct',
+    visaTime: '24–48h Priority Processing',
+    highlight: 'Bengali/English concierge & family guest suites',
+    color: 'border-l-amber-500',
+    badge: '24h Expedited',
+    badgeColor: 'bg-amber-100 text-amber-800',
+  },
+];
+
 const navLinks = [
+  { name: 'Travel Routes', href: '#travel-routes' },
   { name: 'How It Works', href: '#how-it-works' },
   { name: 'Specialties', href: '#specialties' },
   { name: 'Hospitals', href: '#hospitals' },
@@ -368,20 +420,20 @@ export default function HomePage() {
       </header>
 
       {/* ══ HERO ════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden" style={{ minHeight: '88vh' }}>
-        {/* Background image */}
+      <section className="relative overflow-hidden bg-[#071329]" style={{ minHeight: '88vh' }}>
+        {/* World Medical Travel Map Background */}
         <div className="absolute inset-0">
           <Image
-            src="https://images.unsplash.com/photo-1504439468489-c8920d796a29?w=1600&q=80"
-            alt="Patient family with Indian landmark"
+            src="/medical-travel-map.png"
+            alt="Medical travel world map with patient flight routes"
             fill
             priority
-            className="object-cover object-center"
+            className="object-cover object-center opacity-45 mix-blend-screen scale-105"
             sizes="100vw"
           />
-          {/* Dark gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0c1a35]/90 via-[#0c1a35]/75 to-[#0c2244]/50" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0c1a35]/60" />
+          {/* Gradients to blend seamlessly with brand navy and ensure razor-sharp text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#071329]/95 via-[#0c1f3d]/85 to-[#0b284f]/75" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#071329]/60 via-transparent to-[#071329]/90" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
@@ -489,8 +541,132 @@ export default function HomePage() {
         {/* Wave */}
         <div className="absolute bottom-0 left-0 right-0 z-10">
           <svg viewBox="0 0 1440 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 70H1440V35C1200 70 960 0 720 35C480 70 240 0 0 35V70Z" fill="white" />
+            <path d="M0 70H1440V35C1200 70 960 0 720 35C480 70 240 0 0 35V70Z" fill="#f8fafc" />
           </svg>
+        </div>
+      </section>
+
+      {/* ══ GLOBAL MEDICAL FLIGHT CORRIDORS TO INDIA ════════════════════ */}
+      <section id="travel-routes" className="py-16 bg-slate-50 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-sky-800 bg-sky-100 rounded-full uppercase tracking-wider mb-3">
+              <Plane className="w-3.5 h-3.5 text-sky-600" /> Global Patient Corridors
+            </span>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+              International Flight Routes to India's Premier Hospitals
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Direct and single-stop flight connectivity with fast-track Indian e-Medical Visas (24–72h), dedicated airport greeting, and multilingual navigators.
+            </p>
+          </div>
+
+          {/* Interactive World Map & Flight Hub Showcase */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100 mb-10 overflow-hidden">
+            <div className="grid lg:grid-cols-12 gap-8 items-center">
+              {/* Left 7 cols: Map Visual with overlay stats */}
+              <div className="lg:col-span-7 relative h-72 sm:h-96 rounded-2xl overflow-hidden shadow-inner border border-slate-100 bg-[#0c2b4c]">
+                <Image
+                  src="/medical-travel-map.png"
+                  alt="Global medical flight map showing international travel routes to India"
+                  fill
+                  className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  sizes="(max-width:1024px) 100vw,60vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#061527]/90 via-transparent to-[#061527]/30" />
+                
+                {/* Floating Map Badges */}
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+                    <span>Live Routes Active</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-900/80 backdrop-blur-sm rounded-full text-[11px] font-bold text-sky-200 border border-sky-400/30">
+                    <Plane className="w-3 h-3 text-sky-400" />
+                    <span>Destination: New Delhi · Mumbai · Bengaluru · Chennai</span>
+                  </span>
+                </div>
+
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-white bg-slate-900/85 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-rose-400" />
+                    <span><strong>Delhi NCR Hub:</strong> Apollo, Medanta, Fortis FMRI, Max Healthcare</span>
+                  </div>
+                  <span className="hidden sm:inline-block text-emerald-400 font-semibold">T3 IGI Airport Ambulance Liaison</span>
+                </div>
+              </div>
+
+              {/* Right 5 cols: Highlights */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                  <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Government of India e-Medical Visa Partner Assistance</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 leading-snug">
+                  Fly Hassle-Free with End-to-End Travel Logistics
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  We issue official Hospital Visa Invitation Letters (VIL) within 24 hours of clinical evaluation, enabling smooth e-Med Visa approval for patients and medical attendants.
+                </p>
+
+                <div className="space-y-2.5 pt-2">
+                  {[
+                    ['Hospital Visa Invitation Letter (VIL)', 'Issued in 24h by treating quaternary hospital'],
+                    ['Direct T3/CSMIA Airport Reception', 'Chauffeur ambulance or private cab straight to hospital/hotel'],
+                    ['Multilingual Translation On-Ground', 'Arabic, Swahili, Russian, French, and Bengali coordinators'],
+                    ['Pre-Booked Sanitized Hotel Suites', 'Comfortable family guest houses 5–10 mins from hospital'],
+                  ].map(([title, desc], idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-xs">
+                      <CheckCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="text-slate-900 block font-semibold">{title}</strong>
+                        <span className="text-slate-500">{desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <Link
+                    href="/start-journey"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-600 hover:text-sky-700 bg-sky-50 px-4 py-2 rounded-xl border border-sky-200 hover:bg-sky-100 transition"
+                  >
+                    Calculate Travel & Treatment Timeline <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Corridor Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {flightCorridors.map((c, i) => (
+              <div key={i} className={`bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition card-hover border-l-4 ${c.color} flex flex-col justify-between`}>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl">{c.flag}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.badgeColor}`}>
+                      {c.badge}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm text-slate-900">{c.region}</h4>
+                  <p className="text-xs text-sky-700 font-medium mt-0.5 flex items-center gap-1">
+                    <Plane className="w-3 h-3" /> {c.duration}
+                  </p>
+
+                  <div className="mt-3 p-2.5 bg-slate-50 rounded-xl space-y-1 text-[11px] text-slate-600">
+                    <p><strong>Origins:</strong> {c.origins}</p>
+                    <p><strong>Destinations:</strong> {c.destinations}</p>
+                    <p className="text-emerald-700 font-semibold">⚡ {c.visaTime}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                  {c.highlight}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
