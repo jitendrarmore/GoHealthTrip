@@ -117,6 +117,23 @@ export default function PatientLoginPage() {
             </p>
           </div>
 
+          {/* Tab Switcher: Sign In vs Sign Up */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-800/80 border border-slate-700/80 rounded-2xl shadow-md">
+            <button
+              type="button"
+              className="py-2.5 px-4 rounded-xl text-xs font-bold bg-teal-500 text-white shadow-sm transition"
+            >
+              Sign In
+            </button>
+            <Link
+              href="/signup"
+              className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700/60 transition text-center flex items-center justify-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              <span>Create Account (Sign Up)</span>
+            </Link>
+          </div>
+
           {/* Login Card */}
           <div className="bg-slate-800/90 border border-slate-700/80 rounded-3xl p-8 shadow-2xl space-y-6 backdrop-blur-sm">
             {error && (
@@ -217,9 +234,9 @@ export default function PatientLoginPage() {
             </form>
 
             <div className="text-center pt-2 text-xs text-slate-400">
-              New to GoHealthTrip?{' '}
-              <Link href="/start-journey" className="text-teal-400 font-bold hover:underline">
-                Start your medical case
+              Don't have an account?{' '}
+              <Link href="/signup" className="text-teal-400 font-bold hover:underline">
+                Sign up with Mobile Number or Email ➔
               </Link>
             </div>
           </div>

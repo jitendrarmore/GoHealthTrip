@@ -172,7 +172,15 @@ export default function Header() {
               className="px-3 py-2 text-xs font-semibold text-slate-700 hover:text-teal-600 border border-slate-200 hover:border-teal-300 rounded-xl transition flex items-center gap-1.5"
             >
               <LogIn className="w-3.5 h-3.5" />
-              <span>Patient Login</span>
+              <span>Sign In</span>
+            </Link>
+
+            <Link
+              href="/signup"
+              className="px-3 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition flex items-center gap-1.5"
+            >
+              <User className="w-3.5 h-3.5 text-teal-600" />
+              <span>Sign Up</span>
             </Link>
 
             <Link
