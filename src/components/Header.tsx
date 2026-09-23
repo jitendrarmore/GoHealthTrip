@@ -17,7 +17,8 @@ import {
   ChevronDown,
   HelpCircle,
   Users,
-  LogIn
+  LogIn,
+  Key
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -130,6 +131,17 @@ export default function Header() {
                       <span className="text-[10px] text-slate-400">Roles & Permissions (RBAC)</span>
                     </div>
                   </Link>
+                  <Link
+                    href="/staff/login"
+                    onClick={() => setPortalsOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50/60 hover:bg-indigo-50 transition border-t border-indigo-100 mt-1 pt-2"
+                  >
+                    <Key className="w-4 h-4 text-indigo-600" />
+                    <div>
+                      <span className="block font-bold">Staff & Doctor Login</span>
+                      <span className="text-[10px] text-indigo-500">Employee Workspace Access</span>
+                    </div>
+                  </Link>
                 </div>
               )}
             </div>
@@ -157,10 +169,10 @@ export default function Header() {
 
             <Link
               href="/login"
-              className="px-3 py-2 text-xs font-semibold text-slate-700 hover:text-sky-600 border border-slate-200 hover:border-sky-300 rounded-xl transition flex items-center gap-1.5"
+              className="px-3 py-2 text-xs font-semibold text-slate-700 hover:text-teal-600 border border-slate-200 hover:border-teal-300 rounded-xl transition flex items-center gap-1.5"
             >
               <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
+              <span>Patient Login</span>
             </Link>
 
             <Link
