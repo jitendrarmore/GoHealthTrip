@@ -91,12 +91,24 @@ export async function POST(req: NextRequest) {
       return apiError('Primary medical condition is required', 'MISSING_FIELD', 400);
     }
 
+    let patientId = user.patientId || body.patientId;
+    if (!patientId) {
+      const patient = await prisma.patient.findUnique({
+        where: { userId: user.userId },
+      });
+      if (patient) {
+        patientId = patient.id;
+      } else {
+        return apiError('No patient profile found for this user account. Please complete profile first.', 'MISSING_PATIENT', 400);
+      }
+    }
+
     const caseNumber = `GHT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newCase = await prisma.medicalCase.create({
       data: {
         caseNumber,
-        patientId: user.patientId || body.patientId,
+        patientId,
         primaryCondition,
         requestedTreatment,
         symptomsDescription,
@@ -109,6 +121,11 @@ export async function POST(req: NextRequest) {
         patient: true,
       },
     });
+
+    // Invalidate user cache so dashboard and profile show the new case instantly
+    const { CacheService } = await import('@/lib/cache/redis');
+    await CacheService.del(`user:profile:${user.userId}`);
+    await CacheService.del(`user:profile:${user.email}`);
 
     await recordAuditLog({
       entityName: 'MedicalCase',
