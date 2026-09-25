@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from 'react';
 import Logo from '@/components/Logo';
 import HeroScreensaver from '@/components/home/HeroScreensaver';
 import CarePathJourney from '@/components/home/CarePathJourney';
+import PartnerHospitalsSection from '@/components/home/PartnerHospitalsSection';
+import MedicalSpecialtiesSection from '@/components/home/MedicalSpecialtiesSection';
 import {
   ArrowRight, ShieldCheck, Globe2, BadgeCheck, Star,
   Wallet, Award, Heart, Handshake, Smile,
@@ -46,84 +48,6 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 }
 
 /* ─── Data ───────────────────────────────────────────── */
-
-// Hospital thumbnails
-const hospitals = [
-  {
-    name: 'Apollo Hospitals',
-    tag: 'JCI Accredited · 30+ Years',
-    city: 'Delhi · Chennai · Mumbai',
-    img: 'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=400&q=75',
-    color: 'from-sky-600 to-sky-800',
-  },
-  {
-    name: 'Medanta – The Medicity',
-    tag: 'JCI Accredited · Superspecialty',
-    city: 'Gurugram',
-    img: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&q=75',
-    color: 'from-teal-600 to-teal-800',
-  },
-  {
-    name: 'Fortis Memorial (FMRI)',
-    tag: 'NABH · Tertiary Care',
-    city: 'Gurugram',
-    img: 'https://images.unsplash.com/photo-1632833239869-a37e3a5806d2?w=400&q=75',
-    color: 'from-indigo-600 to-indigo-800',
-  },
-  {
-    name: 'Max Healthcare',
-    tag: 'JCI Accredited · 17 Hospitals',
-    city: 'Delhi NCR',
-    img: 'https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&q=75',
-    color: 'from-emerald-600 to-emerald-800',
-  },
-];
-
-// Medical specialty thumbnails
-const specialties = [
-  {
-    name: 'Cardiology & Cardiac Surgery',
-    sub: 'CABG · Valve Replacement · TAVR',
-    img: 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=400&q=75',
-    badge: '★ Most Requested',
-    badgeColor: 'bg-amber-100 text-amber-700',
-  },
-  {
-    name: 'Oncology & Cancer Care',
-    sub: 'CyberKnife · Immunotherapy · BMT',
-    img: 'https://images.unsplash.com/photo-1579154341098-e4e158cc7f55?w=400&q=75',
-    badge: '',
-    badgeColor: '',
-  },
-  {
-    name: 'Orthopedics & Joint Care',
-    sub: 'Robotic Knee · Hip · Spine',
-    img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=400&q=75',
-    badge: '',
-    badgeColor: '',
-  },
-  {
-    name: 'Neurosurgery',
-    sub: 'Gamma Knife · Neuro-Navigation',
-    img: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&q=75',
-    badge: '',
-    badgeColor: '',
-  },
-  {
-    name: 'Organ Transplants',
-    sub: 'Liver · Kidney · Living-donor',
-    img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=75',
-    badge: '',
-    badgeColor: '',
-  },
-  {
-    name: 'Reproductive & IVF',
-    sub: 'ICSI · PGT-A · Fertility Preservation',
-    img: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=75',
-    badge: '',
-    badgeColor: '',
-  },
-];
 
 const whyIndia = [
   { icon: Wallet,     label: '60–80%\nCost Savings',          color: 'text-sky-600 bg-sky-50' },
@@ -275,107 +199,11 @@ export default function HomePage() {
       {/* ══ THE HAPPY PATH — GOHEALTHTRIP CAREPATH JOURNEY ═══════════ */}
       <CarePathJourney />
 
-      {/* ══ HOSPITAL PARTNERS (with image thumbnails) ════════════════════ */}
-      <section id="hospitals" className="py-16 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <span className="inline-block px-3 py-1 text-xs font-bold text-sky-700 bg-sky-100 rounded-full uppercase tracking-wider mb-3">Partner Hospitals</span>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">India's Highest-Accredited Healthcare Networks</h2>
-            <p className="mt-2 text-slate-500 text-sm">Every hospital in our network is independently verified for accreditation, clinical outcomes and patient safety.</p>
-          </div>
+      {/* ══ PARTNER HOSPITALS (ACCREDITED HEALTHCARE NETWORK) ═════════ */}
+      <PartnerHospitalsSection />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {hospitals.map((h, i) => (
-              <div key={i} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl card-hover border border-slate-100">
-                {/* Hospital image */}
-                <div className="relative h-40 overflow-hidden">
-                  <Image
-                    src={h.img}
-                    alt={h.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,25vw"
-                  />
-                  <div className={`absolute inset-0 bg-gradient-to-t ${h.color} opacity-40`} />
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-[9px] font-bold text-emerald-700 flex items-center gap-1">
-                    <BadgeCheck className="w-2.5 h-2.5" /> Verified
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-slate-900 text-sm">{h.name}</h3>
-                  <p className="text-xs text-sky-600 font-semibold mt-0.5">{h.tag}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                    <Globe className="w-3 h-3" /> {h.city}
-                  </p>
-                  <Link href="/hospitals"
-                    className="mt-3 text-xs font-semibold text-sky-600 hover:text-sky-800 flex items-center gap-0.5 transition">
-                    View hospital <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Link href="/hospitals"
-              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-sky-500 text-sky-600 font-bold rounded-xl hover:bg-sky-500 hover:text-white transition-all text-sm">
-              View All Partner Hospitals <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ══ MEDICAL SPECIALTIES (with image thumbnails) ═════════════════ */}
-      <section id="specialties" className="py-16 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <span className="inline-block px-3 py-1 text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full uppercase tracking-wider mb-3">Medical Specialties</span>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">Centers of Clinical Excellence</h2>
-            <p className="mt-2 text-slate-500 text-sm">Explore accredited specialties across India's top quaternary hospitals.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {specialties.map((spec, i) => (
-              <Link href="/find-treatment" key={i}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 card-hover block">
-                {/* Image thumbnail */}
-                <div className="relative h-44 overflow-hidden">
-                  <Image
-                    src={spec.img}
-                    alt={spec.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,33vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent" />
-                  {spec.badge && (
-                    <span className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${spec.badgeColor}`}>
-                      {spec.badge}
-                    </span>
-                  )}
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="font-bold text-white text-sm leading-snug">{spec.name}</h3>
-                  </div>
-                </div>
-                {/* Content */}
-                <div className="p-4 flex items-center justify-between">
-                  <p className="text-xs text-slate-500">{spec.sub}</p>
-                  <span className="text-xs font-semibold text-sky-600 flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-                    Explore <ChevronRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Link href="/find-treatment"
-              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-indigo-500 text-indigo-600 font-bold rounded-xl hover:bg-indigo-500 hover:text-white transition-all text-sm">
-              Browse All Treatments <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* ══ MEDICAL SPECIALTIES (CENTERS OF CLINICAL EXCELLENCE) ═══════ */}
+      <MedicalSpecialtiesSection />
 
       {/* ══ WHY INDIA + WHY GOHEALTHTRIP ════════════════════════════════ */}
       <section className="py-16 bg-slate-50 border-t border-slate-100">
