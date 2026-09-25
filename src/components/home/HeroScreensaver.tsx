@@ -129,12 +129,30 @@ const procedureEstimates: Record<string, { usCost: number; inCost: number }> = {
   'Dental Full-Mouth Implants': { usCost: 34000, inCost: 4800 },
 };
 
+// Hero slide images for rotating screensaver background
+const heroSlides = [
+  { src: '/images/hero-slide-1.png', alt: 'Travel to India - Taj Mahal & Global Connections' },
+  { src: '/images/hero-slide-2.png', alt: 'Doctor Consultation & Medical Diagnostics' },
+  { src: '/images/hero-slide-3.png', alt: 'Visa Approved & Airport Departure' },
+  { src: '/images/hero-slide-4.png', alt: 'World-Class Hospital & Patient Care' },
+  { src: '/images/hero-slide-5.png', alt: 'Family Medical Tourism Experience' },
+];
+
 export default function HeroScreensaver() {
   const [activePatientIndex, setActivePatientIndex] = useState(0);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isScreensaverMode, setIsScreensaverMode] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [selectedProcedure, setSelectedProcedure] = useState('Heart Bypass (CABG)');
   const [selectedHomeCountry, setSelectedHomeCountry] = useState('United States');
+
+  // Auto-cycle through hero background slides (screensaver rotation)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto-cycle through traveling patients like a live flight radar
   useEffect(() => {
@@ -154,21 +172,30 @@ export default function HeroScreensaver() {
     <section className="relative overflow-hidden bg-slate-950 text-white select-none">
       {/* ─── 1. Breathtaking Panoramic Hero Backdrop ───────────────── */}
       <div className="relative w-full h-[620px] sm:h-[680px] lg:h-[720px] overflow-hidden">
-        {/* The User's Panoramic Artwork */}
+       {/* The User's Rotating Hero Slides — Screensaver Mode */}
         <div
           className={`absolute inset-0 transition-transform duration-1000 ease-out ${
             isScreensaverMode ? 'scale-105' : 'scale-100'
           }`}
         >
-          <Image
-            src="/images/gohealthtrip-banner.png"
-            alt="GoHealthTrip - Global Medical Travel to India"
-            fill
-            priority
-            quality={95}
-            className="object-cover object-center lg:object-[center_35%]"
-            sizes="100vw"
-          />
+          {/* Render all slides with crossfade transitions */}
+          {heroSlides.map((slide, idx) => (
+            <div
+              key={slide.src}
+              className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out"
+              style={{ opacity: idx === currentSlideIndex ? 1 : 0 }}
+            >
+              <Image
+                src={slide.src}
+                alt={slide.alt}
+                fill
+                priority={idx === 0}
+                quality={90}
+                className="object-cover object-center lg:object-[center_35%]"
+                sizes="100vw"
+              />
+            </div>
+          ))}
           {/* Subtle cinematic gradient overlays for pristine readability while preserving vibrant imagery */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-900/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/40 to-transparent lg:w-2/3" />
@@ -448,6 +475,22 @@ export default function HeroScreensaver() {
               </div>
             </div>
 
+          </div>
+          {/* Slide Indicator Dots */}
+          <div className="flex items-center justify-center gap-2 py-2">
+            {heroSlides.map((slide, idx) => (
+              <button
+                key={slide.src}
+                type="button"
+                onClick={() => setCurrentSlideIndex(idx)}
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  idx === currentSlideIndex
+                    ? 'w-8 bg-teal-400 shadow-lg shadow-teal-400/30'
+                    : 'w-2 bg-slate-600 hover:bg-slate-400'
+                }`}
+                title={slide.alt}
+              />
+            ))}
           </div>
 
           {/* Bottom Live Corridor Ticker */}
