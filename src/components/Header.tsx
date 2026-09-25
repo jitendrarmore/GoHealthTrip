@@ -21,6 +21,7 @@ import {
   Key
 } from 'lucide-react';
 import { useState } from 'react';
+import Logo from '@/components/Logo';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,19 +43,11 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-violet-700 flex items-center justify-center text-white font-black text-xl shadow-md">
-              G
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-lg text-slate-900 tracking-tight">GoHealthTrip</span>
-                <span className="text-[10px] font-bold text-sky-700 uppercase bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
-                  India HQ
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 font-medium">International Patient Facilitation</p>
-            </div>
+          <Link href="/" className="flex items-center space-x-2.5 group">
+            <Logo variant="compact" theme="light" />
+            <span className="hidden sm:inline-block text-[10px] font-bold text-teal-800 uppercase bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+              India HQ
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ShieldCheck, HeartPulse, Building2, Globe } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 export default function Footer() {
   return (
@@ -9,12 +10,9 @@ export default function Footer() {
           
           {/* Col 1 */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white font-black">
-                G
-              </div>
-              <span className="text-white font-extrabold text-lg">GoHealthTrip</span>
-            </div>
+            <Link href="/" className="inline-block">
+              <Logo variant="compact" theme="dark" />
+            </Link>
             <p className="text-xs text-slate-400 leading-relaxed">
               India’s dedicated international patient coordination platform. Facilitating clinical evaluations, transparent hospital proposals, medical visas, and complete travel logistics.
             </p>

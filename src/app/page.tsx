@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
+import Logo from '@/components/Logo';
+import HeroScreensaver from '@/components/home/HeroScreensaver';
 import {
   ArrowRight, ShieldCheck, Globe2, BadgeCheck, Star,
   Wallet, Award, Heart, Handshake, Smile,
@@ -339,24 +341,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-[68px]">
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative w-11 h-11 flex-shrink-0">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                  <span className="text-white font-black text-xl">G</span>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-white flex items-center justify-center">
-                  <span className="text-white font-black text-[7px]">✓</span>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-extrabold text-xl text-slate-900 tracking-tight leading-none">
-                    GoHealth<span className="text-sky-600">Trip</span>
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">Better Care. Brighter Journeys.</p>
-              </div>
+            {/* Official Brand Logo */}
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <Logo variant="compact" theme="light" />
+              <span className="hidden sm:inline-block text-[10px] font-bold text-teal-800 uppercase bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                India HQ
+              </span>
             </Link>
 
             {/* Desktop Nav */}
@@ -419,132 +409,8 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* ══ HERO ════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[#071329]" style={{ minHeight: '88vh' }}>
-        {/* World Medical Travel Map Background */}
-        <div className="absolute inset-0">
-          <Image
-            src="/medical-travel-map.png"
-            alt="Medical travel world map with patient flight routes"
-            fill
-            priority
-            className="object-cover object-center opacity-45 mix-blend-screen scale-105"
-            sizes="100vw"
-          />
-          {/* Gradients to blend seamlessly with brand navy and ensure razor-sharp text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071329]/95 via-[#0c1f3d]/85 to-[#0b284f]/75" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#071329]/60 via-transparent to-[#071329]/90" />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left */}
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-sky-300 text-xs font-semibold uppercase tracking-wider mb-5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-                Care Beyond Borders · Heal in India, Experience More
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
-                From Anywhere
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">
-                  in the World.
-                </span>
-                <br />
-                To Better Care in India.
-              </h1>
-
-              <p className="mt-5 text-slate-300 text-base lg:text-lg leading-relaxed max-w-md">
-                One trusted journey from your first medical report to treatment, recovery, and the journey home.
-              </p>
-
-              {/* 4 trust pillars */}
-              <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { icon: ShieldCheck, label: 'Trusted Hospitals & Top Doctors' },
-                  { icon: Wallet,      label: 'Affordable Treatment' },
-                  { icon: Handshake,   label: 'End-to-End Support' },
-                  { icon: Globe2,      label: 'Global Patients. Stronger Lives.' },
-                ].map((p) => {
-                  const Icon = p.icon;
-                  return (
-                    <div key={p.label} className="flex flex-col items-center gap-2 bg-white/10 border border-white/15 rounded-xl p-3 text-center">
-                      <Icon className="w-5 h-5 text-sky-300" />
-                      <span className="text-[10px] text-slate-300 font-medium leading-snug">{p.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Link href="/start-journey"
-                  className="group inline-flex items-center justify-center gap-2 px-7 py-4 bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-500 hover:to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-sky-500/30 hover:shadow-xl transition-all text-sm">
-                  <Zap className="w-4 h-4" />
-                  Start Your Treatment Journey
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link href="/demo-case"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold border border-white/25 rounded-xl transition text-sm">
-                  <PlayCircle className="w-4 h-4 text-sky-300" />
-                  View Live Demo Journey
-                </Link>
-              </div>
-            </div>
-
-            {/* Right — stats */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { val: 500, suf: '+', label: 'Patients Served', icon: Users,       color: 'text-sky-400' },
-                { val: 50,  suf: '+', label: 'Accredited Hospitals', icon: Building2, color: 'text-teal-400' },
-                { val: 7,   suf: '',  label: 'Countries Served', icon: Globe2,      color: 'text-violet-400' },
-                { val: 70,  suf: '%', label: 'Avg Cost Savings', icon: TrendingUp,  color: 'text-emerald-400' },
-              ].map((s) => {
-                const Icon = s.icon;
-                return (
-                  <div key={s.label} className="glass-card rounded-2xl p-5 text-center card-hover">
-                    <div className="text-3xl font-black text-white mb-1">
-                      <AnimatedCounter target={s.val} suffix={s.suf} />
-                    </div>
-                    <p className="text-xs text-slate-300 font-medium">{s.label}</p>
-                    <Icon className={`w-4 h-4 ${s.color} mx-auto mt-2`} />
-                  </div>
-                );
-              })}
-              {/* 48h promise */}
-              <div className="col-span-2 glass-card rounded-2xl p-4 flex items-center justify-between card-hover">
-                <div>
-                  <div className="text-2xl font-black text-white"><AnimatedCounter target={48} suffix="h" /></div>
-                  <p className="text-xs text-slate-300 font-medium">Average Time to Hospital Proposal</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
-                  <Clock3 className="w-6 h-6 text-sky-300" />
-                </div>
-              </div>
-              {/* Live demo pill */}
-              <div className="col-span-2 glass-card rounded-xl p-3 flex items-center gap-3">
-                <div className="animate-pulse-ring w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                  <span className="w-3 h-3 rounded-full bg-emerald-400 block" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-white">Live Demo: Ali Al-Balushi (Oman)</p>
-                  <p className="text-xs text-slate-400 truncate">Cardiac Surgery · Hospital Proposal Received</p>
-                </div>
-                <Link href="/demo-case" className="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-0.5 whitespace-nowrap">
-                  View <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Wave */}
-        <div className="absolute bottom-0 left-0 right-0 z-10">
-          <svg viewBox="0 0 1440 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 70H1440V35C1200 70 960 0 720 35C480 70 240 0 0 35V70Z" fill="#f8fafc" />
-          </svg>
-        </div>
-      </section>
+      {/* ══ HERO: LIVE SCREENSAVER & GLOBAL JOURNEYS TO INDIA ═════════ */}
+      <HeroScreensaver />
 
       {/* ══ GLOBAL MEDICAL FLIGHT CORRIDORS TO INDIA ════════════════════ */}
       <section id="travel-routes" className="py-16 bg-slate-50 border-b border-slate-100">

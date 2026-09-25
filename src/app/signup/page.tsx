@@ -10,6 +10,7 @@ import {
   AlertCircle, MessageSquare, Send, RefreshCw, Loader2, Sparkles,
   Smartphone, Globe
 } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 export default function PatientSignUpPage() {
   const router = useRouter();
@@ -249,9 +250,7 @@ export default function PatientSignUpPage() {
         <div className="max-w-md w-full space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-500 to-emerald-500 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-teal-500/20 mx-auto border-2 border-white/20">
-              G
-            </div>
+            <Logo variant="icon" theme="dark" className="w-20 h-12 mx-auto mb-1" />
             <span className="text-xs font-bold text-teal-400 uppercase tracking-widest block">
               Patient Registration
             </span>
