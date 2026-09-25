@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import Logo from '@/components/Logo';
+import Header from '@/components/Header';
 import HeroScreensaver from '@/components/home/HeroScreensaver';
 import CarePathJourney from '@/components/home/CarePathJourney';
 import PartnerHospitalsSection from '@/components/home/PartnerHospitalsSection';
@@ -87,26 +87,9 @@ const testimonials = [
 ];
 
 
-const navLinks = [
-  { name: 'How It Works', href: '#how-it-works' },
-  { name: 'Specialties', href: '#specialties' },
-  { name: 'Hospitals', href: '#hospitals' },
-  { name: 'Find Treatment', href: '/find-treatment' },
-  { name: 'Demo Journey', href: '/demo-case' },
-];
-
 /* ─── Page ───────────────────────────────────────────── */
 export default function HomePage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState('EN');
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setActiveTestimonial(p => (p + 1) % testimonials.length), 5500);
@@ -115,82 +98,8 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-white overflow-x-hidden">
-
       {/* ══ HEADER ══════════════════════════════════════════════════════ */}
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/97 backdrop-blur-md shadow-md border-b border-slate-100'
-                 : 'bg-white border-b border-slate-200'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-[68px]">
-
-            {/* Official Brand Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <Logo variant="compact" theme="light" />
-              <span className="hidden sm:inline-block text-[10px] font-bold text-teal-800 uppercase bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-                India HQ
-              </span>
-            </Link>
-
-            {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center space-x-6 text-sm font-semibold text-slate-600">
-              {navLinks.map((link) => (
-                <Link key={link.href} href={link.href}
-                  className="nav-link-underline hover:text-sky-600 transition-colors py-1">
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Right CTAs */}
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50">
-                <Globe className="w-3.5 h-3.5 text-slate-400" />
-                <select value={currentLang} onChange={e => setCurrentLang(e.target.value)}
-                  aria-label="Language" className="bg-transparent border-none outline-none cursor-pointer">
-                  <option value="EN">English</option>
-                  <option value="AR">العربية</option>
-                  <option value="SW">Kiswahili</option>
-                  <option value="FR">Français</option>
-                  <option value="RU">Русский</option>
-                  <option value="BN">বাংলা</option>
-                </select>
-              </div>
-              <Link href="/dashboard"
-                className="px-3.5 py-2 text-xs font-semibold text-slate-700 border border-slate-200 hover:border-sky-300 hover:text-sky-700 rounded-lg transition">
-                Coordinator Portal
-              </Link>
-              <Link href="/start-journey"
-                className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
-                Start Treatment <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Mobile toggle */}
-            <button onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition" aria-label="Toggle menu">
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {mobileOpen && (
-          <div className="lg:hidden bg-white border-t border-slate-100 px-4 pt-2 pb-4 space-y-1">
-            {navLinks.map(link => (
-              <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition">
-                {link.name}
-              </Link>
-            ))}
-            <div className="pt-2 border-t border-slate-100">
-              <Link href="/start-journey" onClick={() => setMobileOpen(false)}
-                className="block w-full py-2.5 text-center text-sm font-bold text-white bg-gradient-to-r from-sky-500 to-indigo-600 rounded-lg shadow">
-                Start Treatment Journey
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
+      <Header />
 
       {/* ══ HERO: LIVE SCREENSAVER & GLOBAL JOURNEYS TO INDIA ═════════ */}
       <HeroScreensaver />
