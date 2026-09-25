@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import Logo from '@/components/Logo';
 import HeroScreensaver from '@/components/home/HeroScreensaver';
+import CarePathJourney from '@/components/home/CarePathJourney';
 import {
   ArrowRight, ShieldCheck, Globe2, BadgeCheck, Star,
   Wallet, Award, Heart, Handshake, Smile,
@@ -45,97 +46,6 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 }
 
 /* ─── Data ───────────────────────────────────────────── */
-
-// 6 Happy Path steps with Unsplash thumbnails
-const journeySteps = [
-  {
-    num: '1',
-    title: 'Register & Verify',
-    color: 'bg-sky-600',
-    textColor: 'text-sky-700',
-    borderColor: 'border-sky-500',
-    img: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=480&q=75',
-    imgAlt: 'Patient registering on mobile',
-    bullets: [
-      'Sign up on GoHealthTrip',
-      'Identity verification via country-specific validators',
-      'Secure & compliant onboarding',
-    ],
-  },
-  {
-    num: '2',
-    title: 'Upload Medical Reports',
-    color: 'bg-teal-600',
-    textColor: 'text-teal-700',
-    borderColor: 'border-teal-500',
-    img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=480&q=75',
-    imgAlt: 'MRI and medical scans',
-    bullets: [
-      'Upload prescriptions, reports & recommendations',
-      'Our team reviews & validates',
-      'Get initial treatment estimate',
-    ],
-  },
-  {
-    num: '3',
-    title: 'Consult & Plan',
-    color: 'bg-indigo-600',
-    textColor: 'text-indigo-700',
-    borderColor: 'border-indigo-500',
-    img: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=480&q=75',
-    imgAlt: 'Doctor video consultation',
-    bullets: [
-      'Get matched with India\'s best doctors & hospitals',
-      'Detailed consultation & final treatment plan',
-      'Transparent cost & timeline',
-    ],
-  },
-  {
-    num: '4',
-    title: 'Confirm & Prepare (Visa & Travel)',
-    color: 'bg-amber-500',
-    textColor: 'text-amber-700',
-    borderColor: 'border-amber-500',
-    img: '/medical-travel-map.png',
-    imgAlt: 'Global flight routes and medical travel map to India',
-    bullets: [
-      'Confirm your treatment plan',
-      'Pay initial platform fees',
-      'We assist with medical visa for patient & family',
-      'Handle flight booking, stay & airport logistics',
-    ],
-  },
-  {
-    num: '5',
-    title: 'Travel & Treatment',
-    color: 'bg-emerald-600',
-    textColor: 'text-emerald-700',
-    borderColor: 'border-emerald-500',
-    img: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=480&q=75',
-    imgAlt: 'Modern hospital in India',
-    bullets: [
-      'Airport pickup & local support',
-      'Hospital registration via API',
-      'Admission, treatment & surgery',
-      'Continuous care & family assistance',
-    ],
-  },
-  {
-    num: '6',
-    title: 'Recover & Return Happier',
-    color: 'bg-rose-500',
-    textColor: 'text-rose-700',
-    borderColor: 'border-rose-500',
-    img: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=480&q=75',
-    imgAlt: 'Happy family after recovery',
-    bullets: [
-      'Post-treatment care & follow-up',
-      'Cab, hotel & hospitality support',
-      'Share your success story',
-      'Refer friends & family',
-    ],
-  },
-];
 
 // Hospital thumbnails
 const hospitals = [
@@ -362,67 +272,8 @@ export default function HomePage() {
       <HeroScreensaver />
 
 
-      {/* ══ THE HAPPY PATH — PATIENT JOURNEY ════════════════════════════ */}
-      <section id="how-it-works" className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* Section header — matches brand doc style */}
-          <div className="rounded-2xl bg-gradient-to-r from-sky-700 via-sky-600 to-indigo-700 px-8 py-6 mb-10 text-center shadow-lg">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              THE HAPPY PATH – PATIENT JOURNEY
-            </h2>
-            <p className="text-sky-200 mt-1 text-sm">A seamless, end-to-end experience from home to recovery</p>
-          </div>
-
-          {/* Steps grid with image thumbnails */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {journeySteps.map((step, i) => (
-              <div key={i} className={`bg-white rounded-2xl border-2 ${step.borderColor} shadow-sm hover:shadow-xl transition-all overflow-hidden group card-hover`}>
-                {/* Thumbnail */}
-                <div className="relative h-44 overflow-hidden">
-                  <Image
-                    src={step.img}
-                    alt={step.imgAlt}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,33vw"
-                  />
-                  {/* Step number badge */}
-                  <div className={`absolute top-3 left-3 w-9 h-9 rounded-full ${step.color} flex items-center justify-center text-white font-black text-lg shadow-lg`}>
-                    {step.num}
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  <h3 className={`text-base font-bold mb-3 ${step.textColor}`}>{step.title}</h3>
-                  <ul className="space-y-1.5">
-                    {step.bullets.map((b, j) => (
-                      <li key={j} className="flex items-start gap-2 text-xs text-slate-600">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bottom outcome */}
-          <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4 p-6 bg-rose-50 rounded-2xl border border-rose-100">
-            <Heart className="w-8 h-8 text-rose-500 flex-shrink-0" />
-            <div className="text-center md:text-left">
-              <p className="text-sm font-bold text-rose-700 uppercase tracking-wider">Healthier People. Happier Families. Brighter Tomorrows.</p>
-              <p className="text-xs text-slate-500 mt-0.5">Our mission is to make world-class healthcare accessible to every patient, from anywhere in the world.</p>
-            </div>
-            <Link href="/start-journey"
-              className="flex-shrink-0 px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-sm flex items-center gap-1.5 transition">
-              Start Your Journey <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* ══ THE HAPPY PATH — GOHEALTHTRIP CAREPATH JOURNEY ═══════════ */}
+      <CarePathJourney />
 
       {/* ══ HOSPITAL PARTNERS (with image thumbnails) ════════════════════ */}
       <section id="hospitals" className="py-16 bg-slate-50 border-t border-slate-100">
